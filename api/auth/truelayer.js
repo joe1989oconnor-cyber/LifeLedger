@@ -1,9 +1,7 @@
 // api/auth/truelayer.js
 // Initiates TrueLayer OAuth flow — redirects user to bank selection screen
-
 const crypto = require('crypto');
 
-// Detect sandbox vs production from the client ID
 function getAuthUrl() {
   const clientId = process.env.TRUELAYER_CLIENT_ID || '';
   const isSandbox = clientId.startsWith('sandbox-');
@@ -37,12 +35,10 @@ module.exports = async function handler(req, res) {
   console.log('[TrueLayer] Sandbox mode:', isSandbox);
   console.log('[TrueLayer] Auth URL:', TRUELAYER_AUTH_URL);
 
-  // Build redirect URI
   const baseUrl = getBaseUrl(req);
   const redirectUri = `${baseUrl}/api/auth/callback`;
   console.log('[TrueLayer] Redirect URI:', redirectUri);
 
-  // Generate signed state (CSRF protection)
   const nonce = crypto.randomBytes(16).toString('hex');
   const timestamp = Date.now().toString();
   const statePayload = `${nonce}:${timestamp}`;
@@ -51,20 +47,13 @@ module.exports = async function handler(req, res) {
   const sig = hmac.digest('hex');
   const state = Buffer.from(`${statePayload}:${sig}`).toString('base64url');
 
-  // Build auth URL
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: SCOPES,
     state: state,
-    providers: 'uk-ob-all uk-oauth-all',
   });
-
-  // Sandbox only: enable mock bank for testing
-  if (isSandbox) {
-    params.set('enable_mock', 'true');
-  }
 
   const authUrl = `${TRUELAYER_AUTH_URL}/?${params.toString()}`;
   console.log('[TrueLayer] Redirecting to:', authUrl);
