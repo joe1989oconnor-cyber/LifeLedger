@@ -1231,10 +1231,25 @@ footer a:hover{color:var(--teal);}
 </div>
 
 <div class="page" id="page-moving">
-  <div class="page-head"><div class="ph-left"><div class="page-title">Moving Hub</div><div class="page-sub">Sheffield &rarr; Manchester &middot; 15 July 2025</div></div></div>
-  <div class="move-progress">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:11px"><div><div style="font-size:18px;font-weight:800">Sheffield &rarr; Manchester</div><div style="font-size:12px;color:var(--slate-3)">15 July 2025 &middot; 40 days away</div></div><span style="background:var(--teal);color:#fff;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:700">Planning</span></div>
-    <div style="background:var(--white);border-radius:var(--r-sm);padding:11px 13px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="font-weight:700">Progress</span><span id="movePct" style="font-weight:800;color:var(--teal)">56%</span></div><div class="prog-bg"><div class="prog-fill" id="moveBar" style="width:56%;background:var(--teal)"></div></div><div style="font-size:11px;color:var(--slate-3);margin-top:3px" id="moveSub">14 of 25 tasks done</div></div>
+  <div class="page-head"><div class="ph-left"><div class="page-title">Moving Hub</div><div class="page-sub" id="moveSub">Plan your move</div></div><button class="btn-add" onclick="openMoveSetup()"><i class="ti ti-edit"></i> Edit Move</button></div>
+  <div class="move-progress" id="moveProgress">
+    <div id="moveSetupPrompt" style="text-align:center;padding:24px 16px">
+      <div style="font-size:36px;margin-bottom:12px">🏠</div>
+      <div style="font-size:16px;font-weight:800;margin-bottom:6px;color:var(--slate)">Set up your move</div>
+      <div style="font-size:13px;color:var(--slate-3);margin-bottom:16px;line-height:1.6">Enter your old and new address to get started with your personalised moving checklist</div>
+      <button class="btn-save" style="display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:11px" onclick="openMoveSetup()"><i class="ti ti-map-pin"></i> Set up my move</button>
+    </div>
+    <div id="moveDetails" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:11px">
+        <div><div style="font-size:18px;font-weight:800" id="moveFromTo">—</div><div style="font-size:12px;color:var(--slate-3)" id="moveDateLine"></div></div>
+        <span id="moveStatusBadge" style="background:var(--teal);color:#fff;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:700">Planning</span>
+      </div>
+      <div style="background:var(--white);border-radius:var(--r-sm);padding:11px 13px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="font-weight:700">Progress</span><span id="movePct" style="font-weight:800;color:var(--teal)">0%</span></div>
+        <div class="prog-bg"><div class="prog-fill" id="moveBar" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-3);margin-top:5px"><span id="moveDone">0 of 0 tasks done</span><span id="moveDaysLeft"></span></div>
+      </div>
+    </div>
   </div>
   <div class="tab-bar">
     <button class="tab-btn active" id="mt-check" onclick="switchMovTab('check',this)">Checklist</button>
@@ -2811,6 +2826,7 @@ var TEMPLATES=[
 ];
 var moveDone=load('moveDone',[]);
 function renderMoving(){
+  renderMoveHeader();
   var el=document.getElementById('movingTimeline');if(!el)return;
   var total=0,done=0;
   MOVE_ITEMS.forEach(function(phase){total+=phase.items.length;});
@@ -4375,6 +4391,91 @@ function signInWithGoogle() {
   .catch(function(err) { console.error('[Google Auth] Error:', err); });
 })();
 
+
+// ── MOVE SETUP ────────────────────────────────────────────────────────────
+var moveFrom = '';
+var moveTo = '';
+var moveDate = '';
+
+function openMoveSetup() {
+  moveFrom = load('moveFrom', '');
+  moveTo = load('moveTo', '');
+  moveDate = load('moveDate', '');
+  var fi = document.getElementById('moveFromInput');
+  var ti = document.getElementById('moveToInput');
+  var di = document.getElementById('moveDateInput');
+  if (fi) fi.value = moveFrom;
+  if (ti) ti.value = moveTo;
+  if (di) di.value = moveDate;
+  openModal('moveSetupModal');
+}
+
+function saveMoveSetup() {
+  var from = (document.getElementById('moveFromInput')||{}).value||'';
+  var to = (document.getElementById('moveToInput')||{}).value||'';
+  var date = (document.getElementById('moveDateInput')||{}).value||'';
+  if (!from || !to) { toast('Please enter both addresses', 'error'); return; }
+  moveFrom = from;
+  moveTo = to;
+  moveDate = date;
+  save('moveFrom', from);
+  save('moveTo', to);
+  save('moveDate', date);
+  closeModal('moveSetupModal');
+  renderMoveHeader();
+  // Update address hub templates with new addresses
+  updateAddrHubAddresses(from, to);
+  toast('Move details saved ✓', 'success');
+}
+
+function renderMoveHeader() {
+  moveFrom = load('moveFrom', '');
+  moveTo = load('moveTo', '');
+  moveDate = load('moveDate', '');
+
+  var prompt = document.getElementById('moveSetupPrompt');
+  var details = document.getElementById('moveDetails');
+  var fromTo = document.getElementById('moveFromTo');
+  var dateLine = document.getElementById('moveDateLine');
+  var sub = document.getElementById('moveSub');
+
+  if (!moveFrom || !moveTo) {
+    if (prompt) prompt.style.display = '';
+    if (details) details.style.display = 'none';
+    if (sub) sub.textContent = 'Plan your move';
+    return;
+  }
+
+  // Show details
+  if (prompt) prompt.style.display = 'none';
+  if (details) details.style.display = '';
+
+  // Short labels (city/area only)
+  var fromShort = moveFrom.split(',').slice(-2,-1)[0]||moveFrom.split(',')[0]||moveFrom;
+  var toShort = moveTo.split(',').slice(-2,-1)[0]||moveTo.split(',')[0]||moveTo;
+  fromShort = fromShort.trim();
+  toShort = toShort.trim();
+
+  if (fromTo) fromTo.textContent = fromShort + ' → ' + toShort;
+  if (sub) sub.textContent = fromShort + ' → ' + toShort + (moveDate ? ' · ' + fmtD(moveDate) : '');
+
+  if (dateLine && moveDate) {
+    var d = new Date(moveDate);
+    var days = Math.round((d - new Date()) / 86400000);
+    dateLine.textContent = fmtD(moveDate) + ' · ' + (days > 0 ? days + ' days away' : days === 0 ? 'Today!' : Math.abs(days) + ' days ago');
+  }
+}
+
+function updateAddrHubAddresses(from, to) {
+  // Update ADDR_HUB entries that reference addresses
+  if (typeof ADDR_HUB !== 'undefined') {
+    ADDR_HUB.forEach(function(r) {
+      if (r.newAddr !== undefined) r.newAddr = to;
+      if (r.oldAddr !== undefined) r.oldAddr = from;
+    });
+  }
+}
+
 window.addEventListener('load',function(){
   function hideLoader(){
     var el=document.getElementById('screen-loading');
@@ -5400,5 +5501,23 @@ function importSelectedBills(){
   }
 })();
 </script>
+
+<div class="modal-backdrop" id="moveSetupModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <div class="modal-title">Set up your move</div>
+      <button class="modal-close" onclick="closeModal('moveSetupModal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Moving from</label><input type="text" class="fi" id="moveFromInput" placeholder="e.g. 12 Oak Street, Sheffield, S1 2AB"></div>
+      <div class="fg"><label class="fl">Moving to</label><input type="text" class="fi" id="moveToInput" placeholder="e.g. 45 Maple Avenue, Manchester, M1 3CD"></div>
+      <div class="fg"><label class="fl">Moving date</label><input type="date" class="fi" id="moveDateInput"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('moveSetupModal')">Cancel</button>
+      <button class="btn-save" onclick="saveMoveSetup()"><i class="ti ti-check"></i> Save</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
