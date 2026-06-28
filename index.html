@@ -2951,6 +2951,28 @@ function saveItem(){
   if(eid){inventory=inventory.map(function(i){return i.id===parseInt(eid)?item:i;});}
   else{inventory.push(item);awardXP(10,'inventory');}
   save('inventory',inventory);renderInventory();closeModal('addItemModal');
+  // Sync to Supabase
+  (function(){
+    var token=sbToken||load('sb_token',null);
+    if(!token||isGuest)return;
+    var existingSbId=eid?(inventory.find(function(i){return i.id===parseInt(eid);})||{}).sb_id:null;
+    var payload={name:item.name,room:item.room||null,val:item.val||0,
+      cat:item.cat||null,cond:item.cond||null,notes:item.notes||null,emoji:item.emoji||null};
+    var method=existingSbId?'PUT':'POST';
+    var url='/api/supabase/data?table=inventory'+(existingSbId?'&id='+existingSbId:'');
+    fetch(url,{method:method,
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var row=res.data?(Array.isArray(res.data)?res.data[0]:res.data):null;
+      if(row&&row.id){
+        inventory=inventory.map(function(i){if(i.id===item.id){i.sb_id=row.id;}return i;});
+        save('inventory',inventory);
+      }
+    })
+    .catch(function(e){console.error('[Supabase] Save inventory:',e);});
+  })();
   document.getElementById('editItemId').value='';document.getElementById('itemModalTitle').textContent='Add Item';
   toast('Item saved','success');
 }
@@ -3015,6 +3037,25 @@ function handleUpload(inp){
   var f=inp.files[0];if(!f)return;
   var newDoc={id:nextDocId++,name:f.name.replace(/\.[^/.]+$/,''),type:f.name.split('.').pop().toUpperCase(),size:(f.size/1048576).toFixed(1)+' MB',date:new Date().toISOString().split('T')[0],expiry:'',icon:'ti-file',color:'#dbeafe'};
   docs.push(newDoc);save('docs',docs);renderVault();inp.value='';
+  // Sync to Supabase
+  (function(){
+    var token=sbToken||load('sb_token',null);
+    if(!token||isGuest)return;
+    var payload={name:newDoc.name,type:newDoc.type||null,
+      expiry:newDoc.expiry||null,notes:newDoc.notes||null};
+    fetch('/api/supabase/data?table=docs',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var row=res.data?(Array.isArray(res.data)?res.data[0]:res.data):null;
+      if(row&&row.id){
+        docs=docs.map(function(d){if(d.id===newDoc.id){d.sb_id=row.id;}return d;});
+        save('docs',docs);
+      }
+    })
+    .catch(function(e){console.error('[Supabase] Save doc:',e);});
+  })();
   toast(f.name+' uploaded','success');awardXP(15,'vault');
 }
 function deleteDoc(id){docs=docs.filter(function(d){return d.id!==id;});save('docs',docs);renderVault();toast('Document removed','success');}
@@ -3293,9 +3334,9 @@ function saveBill(){
     })
     .catch(function(e){console.error('[Supabase] Save bill:',e);});
   })();
-  var cur=document.querySelector('.page.active');
-  if(cur&&cur.id==='page-bills')renderBills();
-  else renderDash();
+  // Render immediately with local data
+  renderBills();
+  renderDash();
   toast('Bill '+(eid?'updated':'added'),'success');
 }
 function deleteBill(id){
@@ -4112,9 +4153,34 @@ function sbLoadAllData(callback) {
           budgets = {};
           res.data.forEach(function(b) { budgets[b.category] = b.amount; });
         }
-        if (table === 'inventory') inventory = res.data;
-        if (table === 'docs') docs = res.data;
-        if (table === 'members') members = res.data;
+        if (table === 'inventory') {
+          inventory = res.data.map(function(item, i) {
+            return {
+              id: i+1, sb_id: item.id,
+              name: item.name, room: item.room||'', val: parseFloat(item.val)||0,
+              cat: item.cat||'Other', cond: item.cond||'Good',
+              notes: item.notes||'', emoji: item.emoji||'\uD83D\uDCE6'
+            };
+          });
+        }
+        if (table === 'docs') {
+          docs = res.data.map(function(doc, i) {
+            return {
+              id: i+1, sb_id: doc.id,
+              name: doc.name, type: doc.type||'PDF',
+              expiry: doc.expiry||'', notes: doc.notes||'',
+              date: doc.created_at ? doc.created_at.split('T')[0] : '',
+              icon: 'ti-file', color: '#dbeafe',
+              size: ''
+            };
+          });
+          nextDocId = docs.length + 1;
+        }
+        if (table === 'members') {
+          members = res.data.map(function(m, i) {
+            return { id: i+1, sb_id: m.id, name: m.name, email: m.email||'', role: m.role||'member' };
+          });
+        }
       }
       loaded++;
       if (loaded === tables.length && callback) callback();
