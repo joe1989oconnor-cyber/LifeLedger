@@ -2363,24 +2363,58 @@ function renderDash(){
 
 function renderBills(){
   var _bp=document.getElementById('page-bills');
-  if(_bp){
-    var _bb=_bp.querySelector('.bank-bills-banner');
-    if(!_bb){_bb=document.createElement('div');_bb.className='bank-bills-banner';var _bph=_bp.querySelector('.page-head');if(_bph)_bph.after(_bb);}
-    _bb.innerHTML=!bankConnected
-      ?'<div style="background:linear-gradient(90deg,var(--teal-xl),var(--blue-l));border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#fff;font-size:16px"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate)">Import bills automatically</div><div style="font-size:11.5px;color:var(--slate-3)">Connect your bank and LifeLedger finds your bills</div></div><button onclick="nav(\'bank\',null)" style="background:var(--teal);border:none;border-radius:8px;padding:7px 13px;font:700 12px/1 var(--font);color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-link"></i> Connect bank</button></div>'
-      :'<div style="background:var(--green-l);border:1.5px solid rgba(16,185,129,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-check" style="color:#fff;font-size:16px"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate)">'+bankName+' connected</div><div style="font-size:11.5px;color:var(--slate-3)">Bills imported from your bank</div></div><button onclick="nav(\'bank\',null)" style="background:none;border:1px solid var(--green);border-radius:8px;padding:6px 12px;font:600 11.5px/1 var(--font);color:var(--green);cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-settings"></i> Manage</button></div>';
+  if(!_bp)return;
+
+  // Ensure page-head has an Add Bill button
+  var _ph=_bp.querySelector('.page-head');
+  if(_ph){
+    if(!_ph.querySelector('.btn-save')){
+      var _addBtn=document.createElement('button');
+      _addBtn.className='btn-save';
+      _addBtn.style.cssText='display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;border-radius:10px';
+      _addBtn.innerHTML='<i class="ti ti-plus"></i> Add bill';
+      _addBtn.onclick=function(){openAddBill();};
+      _ph.appendChild(_addBtn);
+    }
   }
-  var tbl=document.getElementById('allBillsTable')||document.getElementById('billsTable');
-  if(!tbl)return;
+
+  // Bank connect banner
+  var _bb=_bp.querySelector('.bank-bills-banner');
+  if(!_bb){_bb=document.createElement('div');_bb.className='bank-bills-banner';if(_ph)_ph.after(_bb);}
+  _bb.innerHTML=!bankConnected
+    ?'<div style="background:linear-gradient(90deg,var(--teal-xl),var(--blue-l));border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#fff;font-size:16px"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate)">Import bills automatically</div><div style="font-size:11.5px;color:var(--slate-3)">Connect your bank and LifeLedger finds your bills</div></div><button onclick="nav(\'bank\',null)" style="background:var(--teal);border:none;border-radius:8px;padding:7px 13px;font:700 12px/1 var(--font);color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-link"></i> Connect bank</button></div>'
+    :'<div style="background:var(--green-l);border:1.5px solid rgba(16,185,129,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-check" style="color:#fff;font-size:16px"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate)">'+bankName+' connected</div><div style="font-size:11.5px;color:var(--slate-3)">Bills imported from your bank</div></div><button onclick="nav(\'bank\',null)" style="background:none;border:1px solid var(--green);border-radius:8px;padding:6px 12px;font:600 11.5px/1 var(--font);color:var(--green);cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-settings"></i> Manage</button></div>';
+
+  // Find or create bills card
+  var _card=_bp.querySelector('.bills-card');
+  if(!_card){
+    _card=document.createElement('div');
+    _card.className='card bills-card';
+    _bb.after(_card);
+  }
+
+  // Demo fallback
   if(isGuest&&!bills.length){bills=defBills();}
+
+  // Empty state
   if(!bills.length&&!isGuest){
-    var wrap=tbl.closest('.card')||tbl.parentNode;
-    if(wrap){wrap.innerHTML='<div style="padding:40px 20px;text-align:center;max-width:440px;margin:0 auto"><div style="font-size:44px;margin-bottom:14px">🯾</div><div style="font-size:18px;font-weight:800;margin-bottom:8px;color:var(--slate)">No bills yet</div><div style="font-size:13.5px;color:var(--slate-3);line-height:1.7;margin-bottom:22px">Add your first bill and LifeLedger will track due dates and find savings.</div><button class="btn-save" style="display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:11px;font-size:13.5px" onclick="openAddBill()"><i class="ti ti-plus"></i> Add your first bill</button></div>';}
+    _card.innerHTML='<div style="padding:40px 20px;text-align:center;max-width:440px;margin:0 auto">'
+      +'<div style="font-size:44px;margin-bottom:14px">🯾</div>'
+      +'<div style="font-size:18px;font-weight:800;margin-bottom:8px;color:var(--slate)">No bills yet</div>'
+      +'<div style="font-size:13.5px;color:var(--slate-3);line-height:1.7;margin-bottom:22px">Add your first bill and LifeLedger will track due dates and find savings.</div>'
+      +'<button class="btn-save" style="display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:11px;font-size:13.5px" onclick="openAddBill()"><i class="ti ti-plus"></i> Add your first bill</button>'
+      +'</div>';
     return;
   }
-  tbl.innerHTML='<thead><tr><th>Provider</th><th>Amount</th><th>Status</th><th>Due date</th><th>Actions</th></tr></thead>'
-    +'<tbody>'+bills.map(function(b){return billRow(b,false);}).join('')+'</tbody>';
+
+  // Render bill table
+  _card.innerHTML='<table class="tbl" id="allBillsTable"><thead><tr>'
+    +'<th>Provider</th><th>Amount</th><th>Status</th><th>Due date</th><th>Actions</th>'
+    +'</tr></thead><tbody>'
+    +bills.map(function(b){return billRow(b,false);}).join('')
+    +'</tbody></table>';
 }
+
 
 function filterBills(){
   var s=(document.getElementById('searchInput').value||'').toLowerCase();
