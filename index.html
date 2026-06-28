@@ -2818,12 +2818,25 @@ var ADDR_HUB=[
   {org:'Energy Supplier',type:'Utilities',status:'pending',icon:'ti-bolt',url:''},
   {org:'Insurance providers',type:'Home & car',status:'pending',icon:'ti-shield',url:''}
 ];
-var TEMPLATES=[
-  {title:'Address Change – Bank',body:'Dear [Bank Name] Customer Services,\n\nI am writing to inform you of a change of address for my account(s).\n\nAccount holder: Sarah Jones\nAccount number: **** **** **** 1234\nOld address: 14 Elm Street, Sheffield S6 3AB\nNew address: 8 Birchwood Ave, Manchester M21 4BQ\nEffective date: 15 July 2025\n\nPlease update your records accordingly and confirm once complete.\n\nYours sincerely,\nSarah Jones'},
-  {title:'Address Change – NHS/GP',body:'Dear Practice Manager,\n\nI am writing to inform you that I am moving out of your catchment area and will need to register with a new GP near my new address.\n\nCurrent patient: Sarah Jones\nDate of birth: [DOB]\nCurrent address: 14 Elm Street, Sheffield S6 3AB\nNew address: 8 Birchwood Ave, Manchester M21 4BQ\nDate of move: 15 July 2025\n\nCould you please arrange to have my medical records transferred to my new practice?\n\nThank you for your care over the years.\n\nKind regards,\nSarah Jones'},
-  {title:'Landlord Move-Out Notice',body:'Dear [Landlord/Agency Name],\n\nI am writing to give formal notice of my intention to vacate the above property.\n\nTenant: Sarah Jones\nProperty: 14 Elm Street, Sheffield S6 3AB\nNotice date: [Today\'s date]\nVacation date: 15 July 2025 (4 weeks notice as per tenancy agreement)\n\nI will ensure the property is left in a clean and satisfactory condition. Please arrange a check-out inventory at your earliest convenience.\n\nYours sincerely,\nSarah Jones'},
-  {title:'Address Change – DVLA',body:'DVLA\nSwansea\nSA99 1BN\n\nDear DVLA,\n\nRE: Change of Address – Driving Licence & Vehicle Registration\n\nFull name: Sarah Jones\nDate of birth: [DOB]\nDriving licence no: [LICENCE NO]\nVehicle registration: [REG]\nOld address: 14 Elm Street, Sheffield S6 3AB\nNew address: 8 Birchwood Ave, Manchester M21 4BQ\nDate of change: 15 July 2025\n\nPlease update all records and reissue documents as required.\n\nYours faithfully,\nSarah Jones'}
-];
+// Templates are generated dynamically — use getTemplates() not TEMPLATES directly
+var TEMPLATES = [];
+function getTemplates() {
+  var nm = (document.getElementById('userName') || {}).textContent || '[Your Name]';
+  if (nm.indexOf('Demo') >= 0) nm = '[Your Name]';
+  var fr = load('moveFrom', '') || '[Old Address]';
+  var to = load('moveTo', '') || '[New Address]';
+  var dt = load('moveDate', '') ? fmtD(load('moveDate', '')) : '[Move Date]';
+  var td = new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'});
+  function body(lines) { return lines.join('\n'); }
+  return [
+    {title:'Address Change – Bank', body:body(['Dear [Bank Name] Customer Services,','','I am writing to inform you of a change of address for my account(s).','','Account holder: '+nm,'Account number: **** **** **** [XXXX]','Old address: '+fr,'New address: '+to,'Effective date: '+dt,'','Please update your records accordingly and confirm once complete.','','Yours sincerely,',nm])},
+    {title:'Address Change – NHS/GP', body:body(['Dear Practice Manager,','','I am writing to inform you that I am moving out of your catchment area and will need to register with a new GP near my new address.','','Current patient: '+nm,'Date of birth: [DOB]','Current address: '+fr,'New address: '+to,'Date of move: '+dt,'','Could you please arrange to have my medical records transferred to my new practice?','','Thank you for your care over the years.','','Kind regards,',nm])},
+    {title:'Landlord Move-Out Notice', body:body(['Dear [Landlord/Agency Name],','','I am writing to give formal notice of my intention to vacate the above property.','','Tenant: '+nm,'Property: '+fr,'Notice date: '+td,'Vacation date: '+dt+' (4 weeks notice as per tenancy agreement)','','I will ensure the property is left in a clean and satisfactory condition. Please arrange a check-out inventory at your earliest convenience.','','Yours sincerely,',nm])},
+    {title:'Address Change – DVLA', body:body(['DVLA','Swansea','SA99 1BN','','Dear DVLA,','','RE: Change of Address – Driving Licence & Vehicle Registration','','Full name: '+nm,'Date of birth: [DOB]','Driving licence no: [LICENCE NO]','Vehicle registration: [REG]','Old address: '+fr,'New address: '+to,'Date of change: '+dt,'','Please update all records and reissue documents as required.','','Yours faithfully,',nm])},
+    {title:'Address Change – Utilities', body:body(['Dear Customer Services,','','I am writing to notify you of my change of address and to arrange transfer or cancellation of my account.','','Account holder: '+nm,'Old address: '+fr,'New address: '+to,'Date of move: '+dt,'','Please update your records and confirm any changes to my account or direct debit.','','Yours sincerely,',nm])},
+    {title:'Address Change – Employer/HMRC', body:body(['Dear [HR Department / HMRC],','','I am writing to notify you of my change of address with effect from '+dt+'.','','Full name: '+nm,'National Insurance number: [NI NUMBER]','Old address: '+fr,'New address: '+to,'','Please update your records accordingly.','','Yours sincerely,',nm])}
+  ];
+}
 var moveDone=load('moveDone',[]);
 function renderMoving(){
   renderMoveHeader();
@@ -2870,11 +2883,18 @@ function renderAddrHub(){
 }
 function renderTemplates(){
   var el=document.getElementById('templatesEl');if(!el)return;
-  el.innerHTML=TEMPLATES.map(function(t,i){
+  var from=load('moveFrom','')||'';
+  var to=load('moveTo','')||'';
+  var setupNote=(!from||!to)
+    ?'<div style="background:var(--amber-m);border:1.5px solid var(--amber);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px"><i class="ti ti-info-circle" style="color:var(--amber);font-size:18px;flex-shrink:0"></i><div style="flex:1;font-size:12.5px;color:var(--slate)">Set up your move addresses first so templates are personalised automatically.</div><button onclick="openMoveSetup()" style="background:var(--amber);color:#fff;border:none;border-radius:7px;padding:6px 12px;font:700 12px/1 var(--font);cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-edit"></i> Set up move</button></div>'
+    :'';
+  TEMPLATES=getTemplates();
+  el.innerHTML=setupNote+TEMPLATES.map(function(t,i){
     return '<div class="tpl-card"><div class="tpl-ic"><i class="ti ti-file-text"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700">'+t.title+'</div><div style="font-size:11.5px;color:var(--slate-3)">Ready to personalise &amp; send</div></div><button class="btn-xs bxs-teal" onclick="showTpl('+i+')"><i class="ti ti-eye"></i> View</button></div>';
   }).join('');
 }
 function showTpl(i){
+  TEMPLATES=getTemplates();
   var t=TEMPLATES[i];
   document.getElementById('tplModalTitle').textContent=t.title;
   document.getElementById('tplContent').textContent=t.body;
@@ -4425,6 +4445,8 @@ function saveMoveSetup() {
   renderMoveHeader();
   // Update address hub templates with new addresses
   updateAddrHubAddresses(from, to);
+  // Re-render templates with new addresses
+  if (document.getElementById('templatesEl')) renderTemplates();
   toast('Move details saved ✓', 'success');
 }
 
