@@ -1242,9 +1242,9 @@ footer a:hover{color:var(--teal);}
     <div id="moveDetails" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:11px">
         <div><div style="font-size:18px;font-weight:800" id="moveFromTo">—</div><div style="font-size:12px;color:var(--slate-3)" id="moveDateLine"></div></div>
-        <span <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
           <button onclick="openMoveSetup()" style="background:none;border:1.5px solid var(--teal);border-radius:8px;padding:5px 12px;font:600 12px/1 var(--font);color:var(--teal);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit addresses</button>
-          id="moveStatusBadge" style="background:var(--teal);color:#fff;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:700">Planning</span>
+          <span id="moveStatusBadge" style="background:var(--teal);color:#fff;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:700">Planning</span>
         </div>
       </div>
       <div style="background:var(--white);border-radius:var(--r-sm);padding:11px 13px">
@@ -1829,7 +1829,27 @@ var LLD_NAV='\
 function applyMode(){
   document.querySelector('.sb-nav').innerHTML=currentMode==='landlord'?LLD_NAV:IND_NAV;
   save('mode',currentMode);
-  var lbl=document.getElementById('topAddLabel');
+  var _tb=document.querySelector('#page-moving .tab-bar');
+  if(_tb)_tb.style.display=currentMode==='landlord'?'none':'';
+  var _mpCheck=document.getElementById('mp-check');
+  var _mpAddr=document.getElementById('mp-addr');
+  var _mpTpl=document.getElementById('mp-tpl');
+  if(_mpCheck)_mpCheck.style.display=currentMode==='landlord'?'none':'';
+  // Hide moving hub tabs in landlord mode (not relevant for landlords)
+  var _tabBar=document.querySelector('#page-moving .tab-bar');
+  if(_tabBar)_tabBar.style.display=currentMode==='landlord'?'none':'';
+  var _mpCheck=document.getElementById('mp-check');
+  var _mpAddr=document.getElementById('mp-addr');
+  var _mpTpl=document.getElementById('mp-tpl');
+  if(currentMode==='landlord'){
+    if(_mpCheck)_mpCheck.style.display='none';
+    if(_mpAddr)_mpAddr.style.display='none';
+    if(_mpTpl)_mpTpl.style.display='none';
+  } else {
+    if(_mpCheck)_mpCheck.style.display='';
+    // mp-addr and mp-tpl stay hidden until tab clicked
+  }
+  var lbl=document.getElementById('topAddLbl');
   if(lbl)lbl.textContent=currentMode==='landlord'?'Add Property':'Add Bill';
   // Update mobile nav labels for landlord mode
   var mn_bills_icon=document.getElementById('mn-bills-icon');
@@ -3078,6 +3098,7 @@ function renderVault(){
   var typeIcon={'PDF':'ti-file-type-pdf','JPG':'ti-photo','PNG':'ti-photo','DOCX':'ti-file-word'};
   var typeBg={'PDF':'var(--red-m)','JPG':'var(--blue-m)','PNG':'var(--blue-m)','DOCX':'var(--indigo-m)','default':'var(--slate-7)'};
   var typeFg={'PDF':'var(--red)','JPG':'var(--blue)','PNG':'var(--blue)','DOCX':'var(--indigo)','default':'var(--slate-3)'};
+  var uploadCard='<div class="vault-add-v2" onclick="document.getElementById(\'fileInput\').click()"><i class="ti ti-cloud-upload" style="font-size:28px"></i><span style="font-size:13px;font-weight:600">Upload document</span><span style="font-size:11px">+15 XP</span></div>';
   var html=docs.map(function(d){
     var dys=d.expiry?daysUntil(d.expiry):null;
     var isExp=dys!==null&&dys<0;
@@ -3100,12 +3121,7 @@ function renderVault(){
       +'</div>'
       +'</div>';
   }).join('');
-  html+='<div class="vault-add-v2" onclick="document.getElementById(\'fileInput\').click()">'
-    +'<i class="ti ti-cloud-upload" style="font-size:28px"></i>'
-    +'<span style="font-size:13px;font-weight:600">Upload document</span>'
-    +'<span style="font-size:11px">+15 XP</span>'
-    +'</div>';
-  grid.innerHTML=html;
+  grid.innerHTML=uploadCard+html;
 }
 function handleUpload(inp){
   var f=inp.files[0];if(!f)return;
