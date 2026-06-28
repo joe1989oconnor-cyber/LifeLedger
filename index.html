@@ -903,9 +903,16 @@ footer a:hover{color:var(--teal);}
 </style>
 </head>
 <body>
+<div id="screen-loading" style="position:fixed;inset:0;background:var(--white,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
+  <div style="width:42px;height:42px;border-radius:10px;background:#0d9488;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+    <svg viewBox="0 0 24 24" fill="none" width="24" height="24"><path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z" fill="white" fill-opacity="0.92"/></svg>
+  </div>
+  <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:6px">Life<span style="font-weight:300;opacity:.5">Ledger</span></div>
+  <div style="width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#0d9488;border-radius:50%;animation:spin .8s linear infinite;margin-top:12px"></div>
+</div>
 
 <!-- ══════════════════ LANDING ══════════════════ -->
-<div id="screen-landing">
+<div id="screen-landing" class="hidden">
 <section class="hero">
   <nav class="hero-nav">
     <div class="logo" onclick="showScreen('landing')">
@@ -3263,6 +3270,29 @@ function saveBill(){
   if(eid){bills=bills.map(function(b){return b.id===parseInt(eid)?bill:b;});}
   else{bills.push(bill);awardXP(10,'bill');}
   save('bills',bills);closeModal('billModal');
+  // Sync to Supabase
+  (function(){
+    var token=sbToken||load('sb_token',null);
+    if(!token||isGuest)return;
+    var existingSbId=eid?(bills.find(function(b){return b.id===parseInt(eid);})||{}).sb_id:null;
+    var payload={prov:bill.prov,cat:bill.cat,amt:bill.amt,freq:bill.freq,
+      due:bill.due||null,status:bill.status,url:bill.url||null,
+      ref:bill.ref||null,dd:bill.dd||null,notes:bill.notes||null};
+    var method=existingSbId?'PUT':'POST';
+    var url='/api/supabase/data?table=bills'+(existingSbId?'&id='+existingSbId:'');
+    fetch(url,{method:method,
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var row=res.data?(Array.isArray(res.data)?res.data[0]:res.data):null;
+      if(row&&row.id){
+        bills=bills.map(function(b){if(b.id===bill.id){b.sb_id=row.id;}return b;});
+        save('bills',bills);
+      }
+    })
+    .catch(function(e){console.error('[Supabase] Save bill:',e);});
+  })();
   var cur=document.querySelector('.page.active');
   if(cur&&cur.id==='page-bills')renderBills();
   else renderDash();
@@ -4067,7 +4097,17 @@ function sbLoadAllData(callback) {
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (res.data) {
-        if (table === 'bills') bills = res.data;
+        if (table === 'bills') {
+          bills = res.data.map(function(b,i) {
+            return {
+              id: i+1, sb_id: b.id,
+              prov: b.prov, cat: b.cat, amt: parseFloat(b.amt)||0,
+              freq: b.freq||'Monthly', due: b.due, status: b.status||'upcoming',
+              url: b.url||'', ref: b.ref||'', dd: b.dd||'yes', notes: b.notes||''
+            };
+          });
+          nextBillId = bills.length + 1;
+        }
         if (table === 'budgets') {
           budgets = {};
           res.data.forEach(function(b) { budgets[b.category] = b.amount; });
@@ -4223,28 +4263,34 @@ function signInWithGoogle() {
 })();
 
 window.addEventListener('load',function(){
+  function hideLoader(){
+    var el=document.getElementById('screen-loading');
+    if(el)el.style.display='none';
+  }
   // Check for Google OAuth hash token first
   if (window.location.hash && window.location.hash.indexOf('access_token') >= 0) {
-    return; // checkAuthCallback IIFE handles this
+    hideLoader(); // checkAuthCallback IIFE handles this
+    return;
   }
-  // Try to restore Supabase session
   if (isVercelEnv()) {
     var token = load('sb_token', null);
     if (token) {
       sbRestore(function(restored, user) {
+        hideLoader();
         if (restored && user) {
-          sbLoadAllData(function() {
-            enterApp(user.name, user.email, false);
-          });
+          enterApp(user.name, user.email, false);
         } else {
+          // Token invalid — clear it and show landing
+          try{localStorage.removeItem('ll_sb_token');localStorage.removeItem('ll_sb_refresh');}catch(e){}
           showScreen('landing');
         }
       });
     } else {
+      hideLoader();
       showScreen('landing');
     }
   } else {
-    // Local file — always open as demo
+    hideLoader();
     ['uname','uemail','mode','bills','budgets','docs','inventory','members',
      'props','tenants','maint','comp','income','propInv','xp','pro']
       .forEach(function(k){try{localStorage.removeItem('ll_'+k);}catch(e){}});
