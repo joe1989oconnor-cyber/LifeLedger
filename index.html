@@ -1661,15 +1661,21 @@ function showScreen(s){
   });
 }
 function doLogin(){
-  initData();
-  var email=document.getElementById('loginEmail').value||'';
-  // Check if this email belongs to a tenant
-  var tenant=tenants.find(function(t){return t.email.toLowerCase()===email.toLowerCase();});
+  var email=(document.getElementById('loginEmail')||{}).value||'';
+  var password=(document.getElementById('loginPassword')||{}).value||'';
+  // Check if this email belongs to a tenant (local check)
+  var tenant=tenants.find(function(t){return t.email&&t.email.toLowerCase()===email.toLowerCase();});
   if(tenant){enterTenantPortal(tenant);return;}
-  var uname=email||'Sarah';
-  uname=uname.split('@')[0];uname=uname[0].toUpperCase()+uname.slice(1);
-  save('uname',uname);save('uemail',email);
-  enterApp(uname,email,false);
+  if(!email){toast('Please enter your email address','error');return;}
+  if(isVercelEnv()&&password){
+    sbSignIn(email,password);
+  } else {
+    // Local file or no password — direct entry
+    initData();
+    var uname=email.split('@')[0];uname=uname[0].toUpperCase()+uname.slice(1);
+    save('uname',uname);save('uemail',email);
+    enterApp(uname,email,false);
+  }
 }
 function enterDemo(){
   isGuest=true;initData();
@@ -1705,21 +1711,34 @@ function enterApp(name,email,guest){
   renderAll();
   if(currentMode==='landlord'){nav('ll-dashboard',null);}
 }
-function logOut(){showScreen('landing');}
+function logOut(){
+  if(isVercelEnv()&&!isGuest){sbSignOut();}
+  else{
+    ['sb_token','sb_refresh','uname','uemail'].forEach(function(k){try{localStorage.removeItem('ll_'+k);}catch(e){}});
+    isGuest=false;bills=[];budgets={};docs=[];inventory=[];
+    showScreen('landing');
+  }
+}
 function createAccount(){
   var nEl=document.getElementById('qName')||document.getElementById('regName');
   var eEl=document.getElementById('qEmail')||document.getElementById('regEmail');
+  var pEl=document.getElementById('qPassword')||document.getElementById('regPassword');
   var n=nEl?nEl.value.trim():'';
   var e=eEl?eEl.value.trim():'';
+  var p=pEl?pEl.value:'';
   if(!n){toast('Please enter your name','error');if(nEl)nEl.focus();return;}
   if(!e){toast('Please enter your email address','error');if(eEl)eEl.focus();return;}
   currentMode=_quizMode||'individual';
-  isGuest=false;
-  initBlank();
-  save('uname',n);save('uemail',e);save('mode',currentMode);
-  enterApp(n,e,false);
-  toast('Welcome to LifeLedger, '+n.split(' ')[0]+'!','success');
-  awardXP(10,'account');
+  if(isVercelEnv()&&p){
+    sbSignUp(n,e,p,currentMode);
+  } else {
+    isGuest=false;
+    initBlank();
+    save('uname',n);save('uemail',e);save('mode',currentMode);
+    enterApp(n,e,false);
+    toast('Welcome to LifeLedger, '+n.split(' ')[0]+'!','success');
+    awardXP(10,'account');
+  }
 }
 
 function initBlank(){
@@ -1752,6 +1771,7 @@ var IND_NAV='\
 <button class="nav-item" onclick="nav(\'insights\',this)"><i class="ti ti-sparkles"></i>AI Insights</button>\
 <div class="nav-section">Account</div>\
 <button class="nav-item" onclick="nav(\'upgrade\',this)"><i class="ti ti-crown"></i>Premium<span class="nav-badge nb-purple" id="proNavBadge">&pound;4.99</span></button>\
+<button class="nav-item" onclick="nav(\'bank\',this)"><i class="ti ti-building-bank"></i>Bank Connect<span class="nav-badge nb-teal">New</span></button>\
 <button class="nav-item" onclick="nav(\'settings\',this)"><i class="ti ti-settings"></i>Settings</button>\
 <div class="nav-section" style="opacity:.5;font-size:9px">More</div>\
 <button class="nav-item" onclick="nav(\'calendar\',this)" style="opacity:.7"><i class="ti ti-calendar"></i>Calendar</button>\
@@ -1822,7 +1842,7 @@ var titlesMap={
 function nav(page,el){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   var pg=document.getElementById('page-'+page);
-  if(pg)pg.classList.add('active');
+  if(pg){pg.classList.add('active');pg.classList.remove('hidden');}
   document.querySelectorAll('.nav-item').forEach(function(i){i.classList.remove('active');});
   if(el)el.classList.add('active');
   var _nt=document.getElementById('topbarTitle');if(_nt)_nt.textContent=titlesMap[page]||page;
@@ -3926,11 +3946,215 @@ function renderAll(){
       +'</div></div></div>';
   }).join('');}
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// SUPABASE AUTH
+// ══════════════════════════════════════════════════════════════════════════
+var sbToken = null; // Supabase access token
+
+// ── Sign Up ───────────────────────────────────────────────────────────────
+function sbSignUp(name, email, password, mode) {
+  var btn = document.getElementById('signupBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
+
+  fetch('/api/supabase/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'signup', name, email, password, mode })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) {
+      showAuthError(data.error);
+      if (btn) { btn.disabled = false; btn.textContent = 'Create account'; }
+      return;
+    }
+    sbToken = data.access_token;
+    save('sb_token', sbToken);
+    save('sb_refresh', data.refresh_token);
+    currentMode = mode || 'individual';
+    isGuest = false;
+    initData();
+    enterApp(data.user.name, data.user.email, false);
+    toast('Welcome to LifeLedger, ' + data.user.name + '! 🎉', 'success');
+  })
+  .catch(function(err) {
+    console.error('[Auth] Signup error:', err);
+    // Fall back to localStorage mode if API unavailable
+    save('uname', name); save('uemail', email);
+    isGuest = false; currentMode = mode || 'individual';
+    initData();
+    enterApp(name, email, false);
+  });
+}
+
+// ── Sign In ───────────────────────────────────────────────────────────────
+function sbSignIn(email, password) {
+  var btn = document.getElementById('loginBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+  fetch('/api/supabase/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'signin', email, password })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) {
+      showAuthError(data.error);
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+      return;
+    }
+    sbToken = data.access_token;
+    save('sb_token', sbToken);
+    save('sb_refresh', data.refresh_token);
+    currentMode = data.user.mode || 'individual';
+    isGuest = false;
+    // Load user data from Supabase
+    sbLoadAllData(function() {
+      enterApp(data.user.name, data.user.email, false);
+    });
+  })
+  .catch(function(err) {
+    console.error('[Auth] Signin error:', err);
+    showAuthError('Could not connect — check your internet connection');
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+  });
+}
+
+// ── Sign Out ──────────────────────────────────────────────────────────────
+function sbSignOut() {
+  var token = load('sb_token', null);
+  if (token) {
+    fetch('/api/supabase/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ action: 'signout' })
+    }).catch(function(){});
+  }
+  sbToken = null;
+  ['sb_token','sb_refresh','uname','uemail'].forEach(function(k){ try{localStorage.removeItem('ll_'+k);}catch(e){} });
+  showScreen('landing');
+}
+
+// ── Load all data from Supabase ───────────────────────────────────────────
+function sbLoadAllData(callback) {
+  var token = sbToken || load('sb_token', null);
+  if (!token) { if(callback) callback(); return; }
+
+  var tables = ['bills', 'budgets', 'inventory', 'docs', 'members'];
+  var loaded = 0;
+
+  tables.forEach(function(table) {
+    fetch('/api/supabase/data?table=' + table, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.data) {
+        if (table === 'bills') bills = res.data;
+        if (table === 'budgets') {
+          budgets = {};
+          res.data.forEach(function(b) { budgets[b.category] = b.amount; });
+        }
+        if (table === 'inventory') inventory = res.data;
+        if (table === 'docs') docs = res.data;
+        if (table === 'members') members = res.data;
+      }
+      loaded++;
+      if (loaded === tables.length && callback) callback();
+    })
+    .catch(function(err) {
+      console.error('[Data] Load error for', table, err);
+      loaded++;
+      if (loaded === tables.length && callback) callback();
+    });
+  });
+}
+
+// ── Save a bill to Supabase ───────────────────────────────────────────────
+function sbSaveBill(bill, callback) {
+  var token = sbToken || load('sb_token', null);
+  if (!token || isGuest) { if(callback) callback(bill); return; }
+
+  var method = bill.sb_id ? 'PUT' : 'POST';
+  var url = '/api/supabase/data?table=bills' + (bill.sb_id ? '&id=' + bill.sb_id : '');
+
+  fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(bill)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.data && res.data.id) bill.sb_id = res.data.id;
+    if (callback) callback(bill);
+  })
+  .catch(function(err) {
+    console.error('[Data] Save bill error:', err);
+    if (callback) callback(bill);
+  });
+}
+
+// ── Delete a bill from Supabase ───────────────────────────────────────────
+function sbDeleteBill(bill) {
+  var token = sbToken || load('sb_token', null);
+  if (!token || isGuest || !bill.sb_id) return;
+
+  fetch('/api/supabase/data?table=bills&id=' + bill.sb_id, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).catch(function(err) { console.error('[Data] Delete bill error:', err); });
+}
+
+// ── Session restore on load ───────────────────────────────────────────────
+function sbRestore(callback) {
+  var token = load('sb_token', null);
+  if (!token) { callback(false); return; }
+
+  fetch('/api/supabase/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ action: 'restore' })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      sbToken = token;
+      currentMode = data.user.mode || 'individual';
+      isGuest = false;
+      sbLoadAllData(function() { callback(true, data.user); });
+    } else {
+      callback(false);
+    }
+  })
+  .catch(function() { callback(false); });
+}
+
+function showAuthError(msg) {
+  var el = document.getElementById('authError') || document.getElementById('loginError');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  else toast(msg, 'error');
+}
+
 window.addEventListener('load',function(){
-  ['uname','uemail','mode','bills','budgets','docs','inventory','members',
-   'props','tenants','maint','comp','income','propInv','xp','pro']
-    .forEach(function(k){try{localStorage.removeItem('ll_'+k);}catch(e){}});
-  enterDemoAs('individual');
+  // Try to restore Supabase session first
+  if (isVercelEnv()) {
+    sbRestore(function(restored, user) {
+      if (restored && user) {
+        enterApp(user.name, user.email, false);
+      } else {
+        // No session — show landing page
+        showScreen('landing');
+      }
+    });
+  } else {
+    // Local file — always open as demo
+    ['uname','uemail','mode','bills','budgets','docs','inventory','members',
+     'props','tenants','maint','comp','income','propInv','xp','pro']
+      .forEach(function(k){try{localStorage.removeItem('ll_'+k);}catch(e){}});
+    enterDemoAs('individual');
+  }
 });
 
 // Populate property selects in LL modals when opened
@@ -4663,18 +4887,15 @@ function startBankConnect() {
       + '</div></div>';
   }
 
-  // Try real TrueLayer flow if on Vercel, otherwise use Test Mode
+  // Try Nordigen if on Vercel, otherwise use Test Mode
   if (isVercelEnv()) {
-    console.log('[Bank] Attempting TrueLayer OAuth flow');
-    // Check if API is reachable before redirecting
-    fetch('/api/auth/truelayer', {method:'HEAD'})
+    console.log('[Bank] Attempting Nordigen bank connection');
+    fetch('/api/nordigen/connect', {method:'HEAD'})
       .then(function(r) {
-        // API responded — redirect to it
-        window.location.href = '/api/auth/truelayer';
+        window.location.href = '/api/nordigen/connect';
       })
       .catch(function() {
-        // API not reachable — fall back to Test Mode
-        console.log('[Bank] API not reachable, falling back to Test Mode');
+        console.log('[Bank] Nordigen API not reachable, falling back to Test Mode');
         activateTestMode();
       });
   } else {
@@ -4828,62 +5049,11 @@ function apiFetch(path, opts) {
 }
 
 
-function toggleTxn(id) {
-  selectedTxns[id] = !selectedTxns[id];
-  var chk = document.getElementById('chk-' + id);
-  if (chk) {
-    chk.classList.toggle('checked', selectedTxns[id]);
-    chk.innerHTML = selectedTxns[id] ? '<i class="ti ti-check" style="font-size:12px"></i>' : '';
-  }
-}
 
-function importSelectedBills() {
-  var toAdd = bankSuggestedBills.filter(function(t) {
-    return t.billMatch && selectedTxns[t.id] && !bills.some(function(b) {
-      return b.prov.toLowerCase() === t.billMatch.prov.toLowerCase();
-    });
-  });
-  if (!toAdd.length) {
-    toast('No new bills to add — all selected bills are already in My Bills', 'error');
-    return;
-  }
-  var added = 0;
-  toAdd.forEach(function(t) {
-    var now = new Date();
-    var dueDay = 28;
-    var due = new Date(now.getFullYear(), now.getMonth() + 1, dueDay);
-    bills.push({
-      id: ++nextBillId,
-      prov: t.billMatch.prov,
-      cat: t.billMatch.cat,
-      amt: t.billMatch.amt,
-      freq: 'Monthly',
-      due: due.toISOString().split('T')[0],
-      status: 'upcoming',
-      url: '', ref: '', dd: 'yes',
-      notes: 'Auto-imported from ' + bankName + ' via TrueLayer'
-    });
-    added++;
-  });
-  save('bills', bills);
-  awardXP(added * 5, 'bank');
-  toast(added + ' bill' + (added > 1 ? 's' : '') + ' added to My Bills \u2714', 'success');
-  setTimeout(function() { renderBank(); }, 400);
-}
 
-function disconnectBank() {
-  bankConnected = false;
-  bankName = '';
-  bankPersonalisedConsent = false;
-  bankAccounts = [];
-  bankTransactions = [];
-  bankSuggestedBills = [];
-  selectedTxns = {};
-  save('bankConnected', '');
-  save('bankName', '');
-  toast('Bank disconnected', 'success');
-  renderBank();
-}
+
+
+
 
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -4906,61 +5076,9 @@ var mockTransactions=[
 ];
 var selectedTxns={};
 
-function renderBank(){
-  var el=document.getElementById('bankContent');
-  if(!el)return;
-  if(!bankConnected){
-    renderBankLanding(el);
-  } else {
-    renderBankConnected(el);
-  }
-}
 
-function renderBankLanding(el){
-  var banks=[
-    {name:'Barclays',emoji:'🔵',color:'var(--blue-m)'},
-    {name:'HSBC',emoji:'🔴',color:'var(--red-m)'},
-    {name:'Lloyds',emoji:'🟢',color:'var(--green-m)'},
-    {name:'NatWest',emoji:'🟣',color:'var(--purple-m)'},
-    {name:'Monzo',emoji:'🌸',color:'var(--red-m)'},
-    {name:'Starling',emoji:'⭐',color:'var(--teal-xl)'},
-    {name:'Santander',emoji:'🔥',color:'var(--red-m)'},
-    {name:'Halifax',emoji:'🏦',color:'var(--blue-l)'},
-    {name:'Nationwide',emoji:'🏠',color:'var(--indigo-m)'}
-  ];
 
-  var html='<div class="bank-hero">'
-    +'<div class="bank-hero-icon"><i class="ti ti-building-bank" style="color:#fff;font-size:28px"></i></div>'
-    +'<div class="bank-hero-title">Connect your bank</div>'
-    +'<div class="bank-hero-sub">LifeLedger uses Open Banking to automatically find your bills from your transactions — securely and read-only. Your bank login is never shared with us.</div>'
-    +'<button class="btn-save" style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:12px;font-size:14px;margin-bottom:16px" onclick="startBankConnect()">'
-    +'<i class="ti ti-link"></i> Connect your bank</button>'
-    +'<div class="security-pills">'
-    +'<div class="sec-pill"><i class="ti ti-lock"></i> Read-only access</div>'
-    +'<div class="sec-pill"><i class="ti ti-shield-check"></i> FCA regulated</div>'
-    +'<div class="sec-pill"><i class="ti ti-eye-off"></i> We never see your password</div>'
-    +'<div class="sec-pill"><i class="ti ti-x"></i> Disconnect anytime</div>'
-    +'</div></div>'
 
-    +'<div class="card" style="margin-bottom:16px"><div class="card-head"><div class="card-title"><i class="ti ti-list-check" style="color:var(--teal)"></i> How it works</div></div>'
-    +'<div class="card-body">'
-    +'<div class="bank-step"><div class="bank-step-num">1</div><div><div class="bank-step-title">Choose your bank</div><div class="bank-step-sub">Select from all major UK banks including Monzo, Starling, Barclays, HSBC and more</div></div></div>'
-    +'<div class="bank-step"><div class="bank-step-num">2</div><div><div class="bank-step-title">Approve securely</div><div class="bank-step-sub">You log in directly on your bank\'s own page — we never see your credentials</div></div></div>'
-    +'<div class="bank-step"><div class="bank-step-num">3</div><div><div class="bank-step-title">We find your bills</div><div class="bank-step-sub">LifeLedger scans your transactions and identifies recurring payments automatically</div></div></div>'
-    +'<div class="bank-step"><div class="bank-step-num">4</div><div><div class="bank-step-title">You confirm what to add</div><div class="bank-step-sub">Review each suggested bill and add the ones you want — you stay in control</div></div></div>'
-    +'</div></div>'
-
-    +'<div class="card"><div class="card-head"><div class="card-title"><i class="ti ti-building-bank" style="color:var(--teal)"></i> Supported banks</div></div>'
-    +'<div class="card-body"><div class="bank-grid">'
-    +banks.map(function(b){
-      return '<div class="bank-card" onclick="startBankConnect(\''+b.name+'\')"><div class="bank-card-logo" style="background:'+b.color+'">'+b.emoji+'</div><div><div class="bank-card-name">'+b.name+'</div><div class="bank-card-status">Click to connect</div></div></div>';
-    }).join('')
-    +'</div>'
-    +'<div style="font-size:12px;color:var(--slate-4);margin-top:10px;text-align:center">Powered by TrueLayer Open Banking &middot; FCA Authorised &middot; Your data is encrypted and never sold</div>'
-    +'</div></div>';
-
-  el.innerHTML=html;
-}
 
 
 function completeBankConnect(bank){
@@ -4978,91 +5096,7 @@ function completeBankConnect(bank){
   toast('Connected to '+bankName+' \u2014 found '+mockTransactions.filter(function(t){return t.recurring;}).length+' recurring payments','success');
 }
 
-function renderBankConnected(el){
-  var recurringTxns=mockTransactions.filter(function(t){return t.recurring;});
-  var billTxns=mockTransactions.filter(function(t){return t.billMatch;});
-  var incomeTxns=mockTransactions.filter(function(t){return t.amount>0;});
-  var balance=mockTransactions.reduce(function(a,t){return a+t.amount;},0);
 
-  var html='';
-
-  // ── Connected banner ────────────────────────────────────────────────
-  html+='<div style="background:linear-gradient(90deg,var(--green-m),var(--teal-xl));border:1.5px solid rgba(16,185,129,.25);border-radius:14px;padding:16px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px">'
-    +'<div style="width:42px;height:42px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-check" style="color:#fff;font-size:22px"></i></div>'
-    +'<div style="flex:1">'
-    +'<div style="font-size:14px;font-weight:800;color:var(--slate)">' +bankName+' connected</div>'
-    +'<div style="font-size:12px;color:var(--slate-3)">Last synced just now &middot; 90 days of transactions loaded &middot; '+recurringTxns.length+' recurring payments found</div>'
-    +'</div>'
-    +'<button onclick="bankConnected=false;save(\'bankConnected\',\'\');renderBank()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font:600 12px/1 var(--font);color:var(--slate-3);cursor:pointer"><i class="ti ti-unlink"></i> Disconnect</button>'
-    +'</div>';
-
-  // ── Bill suggestions ────────────────────────────────────────────────
-  html+='<div class="card" style="margin-bottom:16px">'
-    +'<div class="card-head"><div><div class="card-title"><i class="ti ti-sparkles" style="color:var(--teal)"></i> Bills found in your transactions</div>'
-    +'<div class="card-sub">'+billTxns.length+' recurring payments detected — select which to add to My Bills</div></div>'
-    +'<button class="btn-save" style="padding:8px 16px;font-size:12.5px;border-radius:9px" onclick="importSelectedBills()"><i class="ti ti-download"></i> Add selected</button>'
-    +'</div><div class="card-body">';
-
-  billTxns.forEach(function(t){
-    var checked=selectedTxns[t.id]!==false;
-    var alreadyAdded=bills.some(function(b){return b.prov.toLowerCase()===t.billMatch.prov.toLowerCase();});
-    var bg=(typeof catColor!=='undefined'&&catColor[t.billMatch.cat])||'var(--slate-7)';
-    var fg=(typeof catFg!=='undefined'&&catFg[t.billMatch.cat])||'var(--slate-3)';
-    html+='<div class="bill-suggest" style="opacity:'+(alreadyAdded?'.5':'1')+'">'
-      +'<div style="width:38px;height:38px;border-radius:9px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">'+t.emoji+'</div>'
-      +'<div class="bill-suggest-info">'
-      +'<div class="bill-suggest-name">'+t.billMatch.prov+'</div>'
-      +'<div class="bill-suggest-meta">'+t.billMatch.cat+' &middot; &pound;'+t.billMatch.amt.toFixed(2)+'/month &middot; Direct Debit'+(alreadyAdded?' &middot; <span style="color:var(--green);font-weight:700">Already in My Bills</span>':'')+'</div>'
-      +'</div>'
-      +(alreadyAdded
-        ?'<span style="font-size:11px;background:var(--green-m);color:var(--green);padding:3px 9px;border-radius:100px;font-weight:700;flex-shrink:0"><i class="ti ti-check"></i> Added</span>'
-        :'<div class="txn-check '+(checked?'checked':'')+'" onclick="toggleTxn(\''+t.id+'\')" id="chk-'+t.id+'">'+(checked?'<i class="ti ti-check" style="font-size:12px"></i>':'')+'</div>')
-      +'</div>';
-  });
-
-  html+='</div></div>';
-
-  // ── Recent transactions ──────────────────────────────────────────────
-  html+='<div class="card" style="margin-bottom:16px">'
-    +'<div class="card-head"><div class="card-title"><i class="ti ti-list" style="color:var(--teal)"></i> Recent transactions</div></div>'
-    +'<div class="card-body"><div class="txn-list">';
-
-  mockTransactions.slice(0,10).forEach(function(t){
-    var isOut=t.amount<0;
-    html+='<div class="txn-item">'
-      +'<div class="txn-icon" style="background:var(--slate-7)">'+t.emoji+'</div>'
-      +'<div style="flex:1">'
-      +'<div class="txn-name">'+t.desc+'</div>'
-      +'<div class="txn-meta">'+fmtD(t.date)+' &middot; '+t.type+(t.recurring?' &middot; <span style="color:var(--teal);font-weight:700">Recurring</span>':'')+'</div>'
-      +'</div>'
-      +'<div class="txn-amt '+(isOut?'out':'in')+'">'+(isOut?'-':'+')+'&pound;'+Math.abs(t.amount).toFixed(2)+'</div>'
-      +'</div>';
-  });
-
-  html+='</div></div></div>';
-
-  // ── Landlord income detection ───────────────────────────────────────
-  if(currentMode==='landlord'){
-    html+='<div class="card" style="margin-bottom:16px">'
-      +'<div class="card-head"><div class="card-title"><i class="ti ti-home-dollar" style="color:var(--green)"></i> Rent income detected</div></div>'
-      +'<div class="card-body">'
-      +'<div class="bill-suggest">'
-      +'<div style="width:38px;height:38px;border-radius:9px;background:var(--green-m);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💰</div>'
-      +'<div class="bill-suggest-info"><div class="bill-suggest-name">Rent payment received</div>'
-      +'<div class="bill-suggest-meta">£1,200 &middot; 1 Jun 2026 &middot; From J. Carter &middot; Matches Tenant 1</div></div>'
-      +'<button class="btn-switch" style="font-size:11.5px;padding:6px 12px;flex-shrink:0" onclick="toast(\'Rent payment logged to property income\',\'success\')"><i class="ti ti-check"></i> Log income</button>'
-      +'</div></div></div>';
-  }
-
-  // ── Privacy note ─────────────────────────────────────────────────────
-  html+='<div style="text-align:center;padding:16px;font-size:12px;color:var(--slate-4)">'
-    +'<i class="ti ti-lock" style="color:var(--teal)"></i> Your transaction data is processed securely and never sold or shared. '
-    +'<a href="#" onclick="return false" style="color:var(--teal);font-weight:600">Privacy policy</a> &middot; '
-    +'<button onclick="bankConnected=false;save(\'bankConnected\',\'\');renderBank()" style="background:none;border:none;color:var(--teal);font:600 12px/1 var(--font);cursor:pointer;padding:0">Disconnect bank</button>'
-    +'</div>';
-
-  el.innerHTML=html;
-}
 
 function toggleTxn(id){
   selectedTxns[id]=!selectedTxns[id];
