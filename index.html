@@ -3269,8 +3269,18 @@ function saveBill(){
   toast('Bill '+(eid?'updated':'added'),'success');
 }
 function deleteBill(id){
+  var bill=bills.find(function(b){return b.id===id;});
   bills=bills.filter(function(b){return b.id!==id;});
-  save('bills',bills);renderBills();toast('Bill removed','success');
+  save('bills',bills);
+  // Sync delete to Supabase
+  var token=sbToken||load('sb_token',null);
+  if(token&&!isGuest&&bill&&bill.sb_id){
+    fetch('/api/supabase/data?table=bills&id='+bill.sb_id,{
+      method:'DELETE',
+      headers:{'Authorization':'Bearer '+token}
+    }).catch(function(err){console.error('[Supabase] Delete bill error:',err);});
+  }
+  renderBills();toast('Bill removed','success');
 }
 function exportCSV(){
   var csv='Provider,Category,Amount,Frequency,Due Date,Status,Direct Debit,Reference,URL,Notes\n'+bills.map(function(b){return [b.prov,b.cat,b.amt,b.freq,b.due,b.status,b.dd,b.ref||'',b.url||'',b.notes||''].map(function(v){return '"'+(v+'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
@@ -4213,16 +4223,26 @@ function signInWithGoogle() {
 })();
 
 window.addEventListener('load',function(){
-  // Try to restore Supabase session first
+  // Check for Google OAuth hash token first
+  if (window.location.hash && window.location.hash.indexOf('access_token') >= 0) {
+    return; // checkAuthCallback IIFE handles this
+  }
+  // Try to restore Supabase session
   if (isVercelEnv()) {
-    sbRestore(function(restored, user) {
-      if (restored && user) {
-        enterApp(user.name, user.email, false);
-      } else {
-        // No session — show landing page
-        showScreen('landing');
-      }
-    });
+    var token = load('sb_token', null);
+    if (token) {
+      sbRestore(function(restored, user) {
+        if (restored && user) {
+          sbLoadAllData(function() {
+            enterApp(user.name, user.email, false);
+          });
+        } else {
+          showScreen('landing');
+        }
+      });
+    } else {
+      showScreen('landing');
+    }
   } else {
     // Local file — always open as demo
     ['uname','uemail','mode','bills','budgets','docs','inventory','members',
