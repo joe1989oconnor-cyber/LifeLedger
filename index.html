@@ -1242,7 +1242,10 @@ footer a:hover{color:var(--teal);}
     <div id="moveDetails" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:11px">
         <div><div style="font-size:18px;font-weight:800" id="moveFromTo">—</div><div style="font-size:12px;color:var(--slate-3)" id="moveDateLine"></div></div>
-        <span id="moveStatusBadge" style="background:var(--teal);color:#fff;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:700">Planning</span>
+        <span <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="openMoveSetup()" style="background:none;border:1.5px solid var(--teal);border-radius:8px;padding:5px 12px;font:600 12px/1 var(--font);color:var(--teal);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-edit"></i> Edit addresses</button>
+          id="moveStatusBadge" style="background:var(--teal);color:#fff;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:700">Planning</span>
+        </div>
       </div>
       <div style="background:var(--white);border-radius:var(--r-sm);padding:11px 13px">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="font-weight:700">Progress</span><span id="movePct" style="font-weight:800;color:var(--teal)">0%</span></div>
@@ -1393,11 +1396,7 @@ footer a:hover{color:var(--teal);}
       <div class="settings-row"><div class="sr-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-arrows-exchange"></i></div><div class="sr-text"><div class="sr-label">Switch recommendations</div><div class="sr-desc">Show affiliate Compare &amp; Switch buttons</div></div><button class="toggle on" id="affToggle" onclick="affEnabled=!affEnabled;this.classList.toggle('on',affEnabled)"></button></div>
     </div>
   </div>
-  <div class="settings-section"><div class="settings-section-title">Mode &amp; Navigation</div>
-    <div class="card">
-      <div class="settings-row"><div class="sr-icon" style="background:var(--blue-l);color:var(--blue)"><i class="ti ti-arrows-exchange"></i></div><div class="sr-text"><div class="sr-label">Switch account mode</div><div class="sr-desc">Toggle Individual or Landlord/Agency experience</div></div><button class="btn-xs bxs-teal" onclick="openModal('switchModeModal')"><i class="ti ti-refresh"></i> Switch</button></div>
-    </div>
-  </div>
+
   <div class="settings-section"><div class="settings-section-title">Privacy &amp; Data</div>
     <div class="card">
       <div class="settings-row"><div class="sr-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-shield"></i></div><div class="sr-text"><div class="sr-label">Affiliate disclosure</div><div class="sr-desc">How LifeLedger earns money &mdash; full transparency</div></div><button class="btn-xs bxs-teal" onclick="openModal('disclosureModal')">View</button></div>
@@ -1733,9 +1732,9 @@ function enterApp(name,email,guest){
   _e=document.getElementById('darkToggle');if(_e)_e.classList.toggle('on',isDark);
   applyMode();
   _e=document.getElementById('proNavBadge');if(_e)_e.classList.toggle('hidden',isPro);
-  // Hide mode switcher for real (non-guest) accounts
+  // Always hide mode switcher - users choose mode at signup
   var _ms=document.getElementById('modeStrip');
-  if(_ms)_ms.style.display=guest?'':'none';
+  if(_ms)_ms.style.display='none';
   showScreen('app');
   loadThemes();
   renderAll();
