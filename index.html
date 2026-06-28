@@ -4155,42 +4155,59 @@ function signInWithGoogle() {
 
 // ── Handle Google OAuth callback ──────────────────────────────────────────
 (function checkAuthCallback() {
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('auth_callback') !== '1') return;
+  // Supabase returns tokens in the URL hash after Google OAuth
+  var hash = window.location.hash;
+  if (!hash || hash.indexOf('access_token') < 0) return;
+
+  // Clear the hash from the URL immediately
   window.history.replaceState({}, '', window.location.pathname);
 
-  // Get session from Supabase after Google redirect
-  var hash = window.location.hash;
   var hashParams = new URLSearchParams(hash.replace('#', ''));
   var accessToken = hashParams.get('access_token');
   var refreshToken = hashParams.get('refresh_token');
 
-  if (accessToken) {
-    sbToken = accessToken;
-    save('sb_token', accessToken);
-    if (refreshToken) save('sb_refresh', refreshToken);
+  if (!accessToken) return;
 
-    // Get user details
-    fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/user', {
-      headers: {
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M'
-      }
+  console.log('[Google Auth] Token received, signing in...');
+  sbToken = accessToken;
+  save('sb_token', accessToken);
+  if (refreshToken) save('sb_refresh', refreshToken);
+
+  // Get user details from Supabase
+  fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/user', {
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M'
+    }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(user) {
+    if (!user.id) { console.error('[Google Auth] No user ID'); return; }
+    var name = (user.user_metadata && user.user_metadata.full_name) || user.email.split('@')[0];
+    console.log('[Google Auth] User:', name, user.email);
+    isGuest = false;
+    currentMode = 'individual';
+    // Create profile if first time
+    fetch('/api/supabase/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken },
+      body: JSON.stringify({ action: 'restore' })
     })
     .then(function(r) { return r.json(); })
-    .then(function(user) {
-      if (user.id) {
-        var name = (user.user_metadata && user.user_metadata.full_name) || user.email.split('@')[0];
-        isGuest = false;
-        currentMode = 'individual';
-        sbLoadAllData(function() {
-          enterApp(name, user.email, false);
-          toast('Signed in with Google ✓', 'success');
-        });
-      }
+    .then(function(profile) {
+      sbLoadAllData(function() {
+        enterApp(name, user.email, false);
+        toast('Signed in with Google ✓', 'success');
+      });
     })
-    .catch(function(err) { console.error('[Google Auth] Error:', err); });
-  }
+    .catch(function() {
+      sbLoadAllData(function() {
+        enterApp(name, user.email, false);
+        toast('Signed in with Google ✓', 'success');
+      });
+    });
+  })
+  .catch(function(err) { console.error('[Google Auth] Error:', err); });
 })();
 
 window.addEventListener('load',function(){
