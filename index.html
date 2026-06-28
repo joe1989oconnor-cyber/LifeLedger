@@ -1101,7 +1101,7 @@ footer a:hover{color:var(--teal);}
     <div class="sb-logo-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px"><path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z" fill="white" fill-opacity="0.92"/><rect x="9.5" y="11.5" width="5" height="4" rx="1" fill="white" fill-opacity="0.35"/></svg></div>
     <span class="sb-logo-text">Life<em>Ledger</em></span>
   </div>
-  <div class="mode-strip">
+  <div class="mode-strip" id="modeStrip">
     <div class="mode-strip-inner">
       <button class="ms-btn active" id="ms-ind" onclick="switchMode('individual')"><i class="ti ti-home-2"></i> Individual</button>
       <button class="ms-btn" id="ms-ll" onclick="switchMode('landlord')"><i class="ti ti-building-estate"></i> Landlord</button>
@@ -1718,6 +1718,9 @@ function enterApp(name,email,guest){
   _e=document.getElementById('darkToggle');if(_e)_e.classList.toggle('on',isDark);
   applyMode();
   _e=document.getElementById('proNavBadge');if(_e)_e.classList.toggle('hidden',isPro);
+  // Hide mode switcher for real (non-guest) accounts
+  var _ms=document.getElementById('modeStrip');
+  if(_ms)_ms.style.display=guest?'':'none';
   showScreen('app');
   loadThemes();
   renderAll();
@@ -2690,7 +2693,10 @@ function renderBudget(){
       +'</div>'+barsHtml;
   }
 
-  bars.innerHTML=barsHtml||'<div style="color:var(--slate-3);font-size:13px;padding:10px">No spending data yet.</div>';
+  var editBtnHtml='<div style="text-align:right;margin-bottom:10px">'
+    +'<button class="btn-switch" onclick="openModal(\'budgetModal\')" style="white-space:nowrap">'
+    +'<i class="ti ti-edit"></i> Edit Budgets</button></div>';
+  bars.innerHTML=editBtnHtml+(barsHtml||'<div style="color:var(--slate-3);font-size:13px;padding:10px">No spending data yet.</div>');
 
   // Summary totals
   var pct2=totalBudget>0?Math.min(100,Math.round(totalSpend/totalBudget*100)):0;
@@ -3441,7 +3447,12 @@ function saveProfile(){
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('click',function(e){
-  if(e.target.classList.contains('modal-backdrop')){e.target.classList.remove('open');}
+  if(e.target.classList.contains('modal-backdrop')){
+    // Don't close addItemModal on backdrop click — accidental closes are annoying
+    var safeToClose=['billModal','compareModal','disclosureModal','budgetModal','switchModeModal'];
+    var modalId=e.target.id;
+    if(safeToClose.indexOf(modalId)>=0)e.target.classList.remove('open');
+  }
   var _np=document.getElementById('notifPanel');
   if(_np&&!_np.classList.contains('hidden')){var _nb=document.getElementById('notifBtn');if(_nb&&!_nb.contains(e.target)&&!_np.contains(e.target))_np.classList.add('hidden');}
   var _sb=document.getElementById('sidebar'),_mb=document.getElementById('menuBtn');
@@ -4196,6 +4207,7 @@ function sbLoadAllData(callback) {
               notes: item.notes||'', emoji: item.emoji||'\uD83D\uDCE6'
             };
           });
+          nextItemId = inventory.length + 1;
         }
         if (table === 'docs') {
           docs = res.data.map(function(doc, i) {
