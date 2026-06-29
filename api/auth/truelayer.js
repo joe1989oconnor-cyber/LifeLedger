@@ -17,6 +17,7 @@ module.exports = async function handler(req, res) {
   }
 
   const TRUELAYER_AUTH_URL = getAuthUrl(clientId);
+  const isSandbox = clientId.startsWith('sandbox-');
   const baseUrl = getBaseUrl(req);
   const redirectUri = `${baseUrl}/api/auth/callback`;
 
@@ -33,9 +34,13 @@ module.exports = async function handler(req, res) {
     + `&client_id=${encodeURIComponent(clientId)}`
     + `&redirect_uri=${encodeURIComponent(redirectUri)}`
     + `&scope=info%20accounts%20balance%20transactions%20offline_access`
-    + `&state=${encodeURIComponent(state)}`;
+    + `&state=${encodeURIComponent(state)}`
+    + `&providers=uk-ob-all%20uk-oauth-all`
+    + (isSandbox ? `&enable_mock=true` : '');
 
   console.log('[TrueLayer] Auth URL:', authUrl);
+  console.log('[TrueLayer] Redirect URI:', redirectUri);
+  console.log('[TrueLayer] Sandbox:', isSandbox);
 
   res.setHeader('Set-Cookie',
     `tl_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`
