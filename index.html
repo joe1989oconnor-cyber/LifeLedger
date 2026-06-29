@@ -5279,17 +5279,12 @@ function startBankConnect() {
       + '</div></div>';
   }
 
-  // Try Nordigen if on Vercel, otherwise use Test Mode
+  // Try TrueLayer if on Vercel, otherwise use Test Mode
   if (isVercelEnv()) {
-    console.log('[Bank] Attempting Nordigen bank connection');
-    fetch('/api/nordigen/connect', {method:'HEAD'})
-      .then(function(r) {
-        window.location.href = '/api/nordigen/connect';
-      })
-      .catch(function() {
-        console.log('[Bank] Nordigen API not reachable, falling back to Test Mode');
-        activateTestMode();
-      });
+    console.log('[Bank] Attempting TrueLayer OAuth flow');
+    setTimeout(function() {
+      window.location.href = '/api/auth/truelayer';
+    }, 800);
   } else {
     // Local file — use Test Mode directly
     console.log('[Bank] Local environment — using Test Mode');
