@@ -5052,13 +5052,20 @@ function showForgotPassword() {
 }
 
 function showPasswordResetForm(token) {
-  // Store the recovery token
+  // Store the recovery token and clear any existing session
   window._recoveryToken = token;
-  // Show a modal to enter new password
+  // Clear existing session so user must set new password before accessing app
+  sbToken = null;
+  try { localStorage.removeItem('ll_sb_token'); localStorage.removeItem('ll_sb_refresh'); } catch(e) {}
+  // Show the password reset modal
   var modal = document.getElementById('passwordResetModal');
   if (modal) {
+    // Make sure landing screen is shown behind the modal
+    showScreen('landing');
     modal.classList.add('open');
-    setTimeout(function(){ var el=document.getElementById('newPwInput'); if(el)el.focus(); }, 300);
+    setTimeout(function(){ var el=document.getElementById('newPwInput'); if(el){ el.value=''; el.focus(); } }, 300);
+    var ci = document.getElementById('confirmPwInput'); if(ci) ci.value='';
+    var err = document.getElementById('resetPwError'); if(err) err.style.display='none';
   } else {
     // Fallback — use prompt
     var newPw = prompt('Enter your new password (minimum 8 characters):');
@@ -5671,19 +5678,53 @@ window.addEventListener('load',function(){
     if(el)el.style.display='flex';
   }
   // Route hash callbacks — recovery, signup confirmation, Google OAuth
-  if (window.location.hash && window.location.hash.indexOf('access_token') >= 0) {
-    var _hp = new URLSearchParams(window.location.hash.replace('#',''));
+  var _urlHash = window.location.hash;
+  var _urlSearch = window.location.search;
+
+  // Check query params first (Supabase PKCE flow uses ?type=recovery&token=xxx)
+  var _qp = new URLSearchParams(_urlSearch);
+  if (_qp.get('type') === 'recovery' || _qp.get('type') === 'signup') {
+    var _qtype = _qp.get('type');
+    var _qtoken = _qp.get('token_hash') || _qp.get('token') || '';
+    hideLoader();
+    window.history.replaceState({}, '', window.location.pathname);
+    if (_qtype === 'recovery') {
+      // Exchange token for session then show password form
+      fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M'
+        },
+        body: JSON.stringify({ token_hash: _qtoken, type: 'recovery' })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var accessToken = d.access_token || (d.session && d.session.access_token);
+        if (accessToken) {
+          showPasswordResetForm(accessToken);
+        } else {
+          toast('Reset link expired — please request a new one', 'error');
+          showScreen('login');
+        }
+      })
+      .catch(function() { showScreen('login'); });
+    }
+    return;
+  }
+
+  // Check hash (older Supabase implicit flow)
+  if (_urlHash && _urlHash.indexOf('access_token') >= 0) {
+    var _hp = new URLSearchParams(_urlHash.replace('#',''));
     var _type = _hp.get('type');
     var _token = _hp.get('access_token');
     hideLoader();
     if (_type === 'recovery') {
-      // Password reset — show new password prompt
       window.history.replaceState({}, '', window.location.pathname);
       showPasswordResetForm(_token);
     } else if (_type === 'signup') {
       checkEmailConfirmCallback();
     } else {
-      // Google OAuth
       checkAuthCallback();
     }
     return;
