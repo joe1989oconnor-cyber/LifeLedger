@@ -21,7 +21,7 @@ module.exports = async function handler(req, res) {
   const userId = userRes.id;
 
   const { table, id } = req.query;
-  const validTables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants'];
+  const validTables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants', 'vehicles', 'notes'];
   if (!validTables.includes(table)) return res.status(400).json({ error: 'Invalid table: ' + table });
 
   try {
