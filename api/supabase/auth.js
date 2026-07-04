@@ -18,16 +18,41 @@ module.exports = async function handler(req, res) {
     if (action === 'signup') {
       const authRes = await sb('/auth/v1/signup', 'POST', { email, password });
       if (authRes.error) return res.status(400).json({ error: authRes.error.message || 'Signup failed' });
-      const userId = authRes.user?.id;
-      if (!userId) return res.status(400).json({ error: 'No user ID returned' });
-      // Create profile
-      await sb('/rest/v1/profiles', 'POST', {
-        id: userId, name: name || email.split('@')[0], email, mode: mode || 'individual'
-      }, null, true);
+
+      // When email confirmation is ON, Supabase returns user at top level not authRes.user
+      const userId = authRes.user?.id || authRes.id;
+      const confirmed = authRes.user?.confirmed_at || authRes.confirmed_at;
+      const accessToken = authRes.access_token || null;
+
+      if (!userId) {
+        // Supabase returned nothing — likely duplicate email
+        return res.status(400).json({ error: 'An account with this email may already exist. Please sign in.' });
+      }
+
+      // Try to create profile (may already exist if re-registering)
+      try {
+        await sb('/rest/v1/profiles', 'POST', {
+          id: userId, name: name || email.split('@')[0], email, mode: mode || 'individual'
+        }, null, true);
+      } catch(e) {
+        console.log('[Auth] Profile may already exist:', e.message);
+      }
+
+      // If email confirmation is required (no access token returned)
+      if (!accessToken) {
+        return res.status(200).json({
+          success: true,
+          requiresConfirmation: true,
+          user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual' }
+        });
+      }
+
+      // Email confirmation disabled — sign straight in
       return res.status(200).json({
         success: true,
+        requiresConfirmation: false,
         user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual', is_pro: false },
-        access_token: authRes.access_token,
+        access_token: accessToken,
         refresh_token: authRes.refresh_token
       });
     }
