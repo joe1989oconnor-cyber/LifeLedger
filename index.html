@@ -5051,6 +5051,61 @@ function showForgotPassword() {
   openModal('forgotModal');
 }
 
+function showPasswordResetForm(token) {
+  // Store the recovery token
+  window._recoveryToken = token;
+  // Show a modal to enter new password
+  var modal = document.getElementById('passwordResetModal');
+  if (modal) {
+    modal.classList.add('open');
+    setTimeout(function(){ var el=document.getElementById('newPwInput'); if(el)el.focus(); }, 300);
+  } else {
+    // Fallback — use prompt
+    var newPw = prompt('Enter your new password (minimum 8 characters):');
+    if (!newPw || newPw.length < 8) {
+      toast('Password must be at least 8 characters', 'error');
+      showScreen('login');
+      return;
+    }
+    applyNewPassword(token, newPw);
+  }
+}
+
+function applyNewPassword(token, newPw) {
+  var t = token || window._recoveryToken;
+  if (!t) { toast('Reset link expired — please request a new one', 'error'); showScreen('login'); return; }
+  var btn = document.getElementById('applyPwBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Updating…'; }
+
+  fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/user', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + t,
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M'
+    },
+    body: JSON.stringify({ password: newPw })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.id) {
+      var modal = document.getElementById('passwordResetModal');
+      if (modal) modal.classList.remove('open');
+      window._recoveryToken = null;
+      toast('Password updated! Please sign in with your new password.', 'success');
+      showScreen('login');
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Update password'; }
+      toast('Could not update password — link may have expired', 'error');
+    }
+  })
+  .catch(function(err) {
+    console.error('[Auth] Password update error:', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Update password'; }
+    toast('Something went wrong — please try again', 'error');
+  });
+}
+
 function sendPasswordReset() {
   var email = (document.getElementById('forgotEmail') || {}).value || '';
   var msg = document.getElementById('forgotMsg');
@@ -5615,9 +5670,22 @@ window.addEventListener('load',function(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='flex';
   }
-  // Check for Google OAuth hash token first
+  // Route hash callbacks — recovery, signup confirmation, Google OAuth
   if (window.location.hash && window.location.hash.indexOf('access_token') >= 0) {
-    hideLoader(); // checkAuthCallback IIFE handles this
+    var _hp = new URLSearchParams(window.location.hash.replace('#',''));
+    var _type = _hp.get('type');
+    var _token = _hp.get('access_token');
+    hideLoader();
+    if (_type === 'recovery') {
+      // Password reset — show new password prompt
+      window.history.replaceState({}, '', window.location.pathname);
+      showPasswordResetForm(_token);
+    } else if (_type === 'signup') {
+      checkEmailConfirmCallback();
+    } else {
+      // Google OAuth
+      checkAuthCallback();
+    }
     return;
   }
   if (isVercelEnv()) {
@@ -6804,6 +6872,37 @@ function importSelectedBills(){
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeModal('noteModal')">Cancel</button>
       <button class="btn-save" onclick="saveNote()"><i class="ti ti-check"></i> Save Note</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="passwordResetModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title">Set new password</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--slate-3);margin-bottom:16px;line-height:1.6">Enter a new password for your LifeLedger account.</p>
+      <div class="fg">
+        <label class="fl">New password</label>
+        <input type="password" class="fi" id="newPwInput" placeholder="Minimum 8 characters">
+      </div>
+      <div class="fg">
+        <label class="fl">Confirm password</label>
+        <input type="password" class="fi" id="confirmPwInput" placeholder="Repeat your new password">
+      </div>
+      <div id="resetPwError" style="display:none;font-size:12.5px;color:var(--red);margin-top:6px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-save" id="applyPwBtn" style="width:100%" onclick="
+        var p1=document.getElementById('newPwInput').value;
+        var p2=document.getElementById('confirmPwInput').value;
+        var err=document.getElementById('resetPwError');
+        if(p1.length<8){err.textContent='Password must be at least 8 characters';err.style.display='block';return;}
+        if(p1!==p2){err.textContent='Passwords do not match';err.style.display='block';return;}
+        err.style.display='none';
+        applyNewPassword(null,p1);
+      "><i class="ti ti-check"></i> Update password</button>
     </div>
   </div>
 </div>
