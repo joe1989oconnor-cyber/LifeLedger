@@ -4652,7 +4652,7 @@ function sbLoadAllData(callback) {
   var token = sbToken || load('sb_token', null);
   if (!token) { if(callback) callback(); return; }
 
-  var tables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants'];
+  var tables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants', 'vehicles', 'notes'];
   var loaded = 0;
 
   tables.forEach(function(table) {
@@ -4707,6 +4707,41 @@ function sbLoadAllData(callback) {
           members = res.data.map(function(m, i) {
             return { id: i+1, sb_id: m.id, name: m.name, email: m.email||'', role: m.role||'member' };
           });
+        }
+        if (table === 'vehicles') {
+          try {
+            vehicles = res.data.map(function(v, i) {
+              var d = v.notes_json ? JSON.parse(v.notes_json) : {};
+              return {
+                id: i+1, sb_id: v.id,
+                reg: v.serial||'', make: v.name||'', model: v.warranty||'',
+                year: v.room||'', colour: v.notes||'',
+                fuel: d.fuel||'', engine: d.engine||'',
+                mot: d.mot||'', tax: d.tax||'', insurance: d.insurance||'',
+                lastService: d.lastService||'', nextService: d.nextService||'',
+                mileage: d.mileage||'', breakdown: d.breakdown||'',
+                vehicleNotes: d.vehicleNotes||'', motHistory: d.motHistory||[]
+              };
+            });
+            nextVehicleId = vehicles.length + 1;
+            save('vehicles', vehicles);
+          } catch(e) { console.error('[Load] vehicles error:', e); }
+        }
+        if (table === 'notes') {
+          try {
+            notes = res.data.map(function(n, i) {
+              return {
+                id: i+1, sb_id: n.id,
+                title: n.name||'', body: n.notes||'',
+                colour: n.serial||'default',
+                pinned: n.warranty === 'pinned',
+                created: n.created_at ? n.created_at.slice(0,10) : '',
+                updated: null
+              };
+            });
+            nextNoteId = notes.length + 1;
+            save('notes', notes);
+          } catch(e) { console.error('[Load] notes error:', e); }
         }
         if (table === 'properties') {
           properties = res.data.map(function(p, i) {
@@ -5256,6 +5291,32 @@ function saveVehicle() {
   }
 
   save('vehicles', vehicles);
+  // Sync to Supabase — store all fields using available columns
+  (function(){
+    var _tok=sbToken||load('sb_token',null);
+    if(!_tok||isGuest)return;
+    var _extra=JSON.stringify({fuel:vehicle.fuel,engine:vehicle.engine,mot:vehicle.mot,
+      tax:vehicle.tax,insurance:vehicle.insurance,lastService:vehicle.lastService,
+      nextService:vehicle.nextService,mileage:vehicle.mileage,breakdown:vehicle.breakdown,
+      vehicleNotes:vehicle.notes,motHistory:vehicle.motHistory||[]});
+    var _payload={name:vehicle.make,serial:vehicle.reg,warranty:vehicle.model,
+      room:vehicle.year,notes:vehicle.colour,val:parseFloat(vehicle.mileage)||0,notes_json:_extra};
+    var _sbId=vehicle.sb_id;
+    var _method=_sbId?'PUT':'POST';
+    var _url='/api/supabase/data?table=vehicles'+(_sbId?'&id='+_sbId:'');
+    fetch(_url,{method:_method,
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_tok},
+      body:JSON.stringify(_payload)})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var row=res.data?(Array.isArray(res.data)?res.data[0]:res.data):null;
+      if(row&&row.id){
+        vehicles=vehicles.map(function(v){if(v.id===vehicle.id){v.sb_id=row.id;}return v;});
+        save('vehicles',vehicles);
+      }
+    })
+    .catch(function(e){console.error('[Supabase] Vehicle error:',e);});
+  })();
   closeModal('addVehicleModal');
   renderVehicle();
   toast((eid ? 'Vehicle updated' : 'Vehicle added! +20 XP'), 'success');
@@ -5386,6 +5447,30 @@ function saveNote() {
   }
 
   save('notes', notes);
+  // Sync to Supabase
+  (function(){
+    var _tok=sbToken||load('sb_token',null);
+    if(!_tok||isGuest)return;
+    var _note=eid?notes.find(function(n){return n.id===parseInt(eid);}):notes[notes.length-1];
+    if(!_note)return;
+    var _payload={name:_note.title||'Untitled',notes:_note.body||'',
+      serial:_note.colour||'default',warranty:_note.pinned?'pinned':'',
+      room:'',val:0};
+    var _method=_note.sb_id?'PUT':'POST';
+    var _url='/api/supabase/data?table=notes'+(_note.sb_id?'&id='+_note.sb_id:'');
+    fetch(_url,{method:_method,
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_tok},
+      body:JSON.stringify(_payload)})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      var row=res.data?(Array.isArray(res.data)?res.data[0]:res.data):null;
+      if(row&&row.id){
+        notes=notes.map(function(n){if(n.id===_note.id){n.sb_id=row.id;}return n;});
+        save('notes',notes);
+      }
+    })
+    .catch(function(e){console.error('[Supabase] Note error:',e);});
+  })();
   closeModal('noteModal');
   renderNotes();
 }
