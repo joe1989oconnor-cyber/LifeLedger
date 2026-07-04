@@ -640,8 +640,19 @@ a{color:inherit;text-decoration:none;}
 .toast.xp i{color:#fbbf24;}
 
 /* ── MOBILE NAV ──────────────────────────────────────────────────────── */
-.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:200;padding:7px 0 max(7px,env(safe-area-inset-bottom));justify-content:space-around;}
-.mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 11px;cursor:pointer;font:600 9px/1 var(--font);color:var(--slate-3);transition:color .14s;}
+/* ── Mobile Bottom Nav ────────────────────────────────────────────────── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:200;padding:6px 0 max(8px,env(safe-area-inset-bottom));justify-content:space-around;align-items:flex-end;}
+.mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 8px;cursor:pointer;font:600 10px/1 var(--font);color:var(--slate-3);transition:color .14s;min-width:56px;}
+.mob-nav-item.active{color:var(--teal);}
+.mob-nav-item.active .mn-icon-wrap{background:var(--teal-xl);}
+.mn-icon-wrap{width:44px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;transition:background .14s;position:relative;}
+.mn-badge{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--white);}
+.mn-center .mn-add-btn{width:50px;height:50px;border-radius:25px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:0 4px 14px rgba(13,148,136,.4);margin-top:-18px;}
+.mn-center span{color:var(--teal);font-weight:700;}
+/* Mobile More Menu */
+.mob-more-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:8px 4px;border-radius:12px;font:600 10.5px/1 var(--font);color:var(--slate-2);transition:background .14s;}
+.mob-more-item:active{background:var(--slate-8);}
+.mob-more-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:2px;}
 .mob-nav-item i{font-size:20px;}
 .mob-nav-item.active{color:var(--teal);}
 footer{background:var(--white);border-top:1px solid var(--border);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--slate-3);flex-wrap:wrap;gap:6px;}
@@ -670,25 +681,86 @@ footer a:hover{color:var(--teal);}
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
 @media(max-width:920px){
-  .main{margin-left:0;padding-bottom:65px;}
-  .sidebar{transform:translateX(-100%);}
+  /* Layout */
+  .main{margin-left:0;padding-bottom:72px;}
+  .sidebar{transform:translateX(-100%);z-index:300;}
   .sidebar.open{transform:translateX(0);}
-  .content{padding:13px 11px;}
-    .form-row-2{grid-template-columns:1fr;}
+  .content{padding:12px 12px 16px;}
+  .mob-nav{display:flex;}
+
+  /* Forms */
+  .form-row-2{grid-template-columns:1fr;}
   .plan-grid{grid-template-columns:1fr;}
   .calc-wrap{grid-template-columns:1fr;}
-  .inv-grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));}
-  .vault-grid{grid-template-columns:repeat(auto-fill,minmax(146px,1fr));}
-    .mob-nav{display:flex;}
-  .stat-row{grid-template-columns:repeat(auto-fit,minmax(138px,1fr));}
+
+  /* Grids */
+  .inv-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .vault-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stat-row{grid-template-columns:repeat(2,1fr);gap:8px;}
   .rates-grid{grid-template-columns:1fr;}
   .rate-item{border-right:none;border-bottom:1px solid var(--border);}
   .mode-showcase{grid-template-columns:1fr;}
-  .dash-welcome-right{width:100%;}
   .feat-grid{grid-template-columns:1fr;}
+
+  /* Dashboard */
+  .dash-welcome-right{width:100%;}
+  .dash-action-row{grid-template-columns:repeat(2,1fr);}
+
+  /* Cards */
+  .card-head{padding:11px 13px 9px;}
+  .card-body{padding:12px 13px;}
+  .card-title{font-size:13px;}
+
+  /* Page headers */
+  .page-head{flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .page-title{font-size:18px;}
+
+  /* Tables → card style on mobile */
+  .tbl thead{display:none;}
+  .tbl tbody tr{display:flex;flex-wrap:wrap;padding:10px 13px;gap:4px;border-bottom:1px solid var(--border);}
+  .tbl tbody td{border:none;padding:2px 0;font-size:13px;}
+  .tbl tbody td:first-child{font-weight:700;width:100%;font-size:13.5px;}
+  .tbl tbody td:last-child{margin-left:auto;}
+
+  /* Topbar */
+  .topbar{padding:0 12px;}
+  .tb-logo span{display:none;}
+
+  /* Modals */
+  .modal{margin:0;border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%!important;max-height:90vh;overflow-y:auto;}
+  .modal-backdrop{align-items:flex-end;}
+
+  /* Compare */
+  .cmp-row{flex-wrap:wrap;}
+  .rate-logo{width:36px;height:36px;font-size:18px;}
+
+  /* Hero/Landing */
   .hero-nav{padding:16px 18px;}
+  .hero-h1{font-size:32px;}
+  .lp-features-grid{grid-template-columns:1fr;}
+
+  /* Chat */
   .chat-wrap{height:calc(100vh - var(--top) - 80px);}
   .mode-pill{min-width:unset;}
+
+  /* Bills page */
+  .bills-card{border-radius:12px;}
+
+  /* Quick actions */
+  .dash-action-card{padding:10px 12px;}
+}
+
+@media(max-width:480px){
+  .content{padding:10px 10px 14px;}
+  .stat-row{gap:6px;}
+  .stat-v2{padding:10px 11px;}
+  .sv2-val{font-size:18px;}
+  .sv2-label{font-size:9.5px;}
+  .page-title{font-size:17px;}
+  .inv-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .vault-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .modal{max-height:92vh;}
+  .dash-action-row{grid-template-columns:1fr;}
 }
 @media(max-width:600px){
   .hero-h1{font-size:34px;}
@@ -1499,13 +1571,42 @@ footer a:hover{color:var(--teal);}
 <div class="modal-backdrop" id="tenantMaintModal"><div class="modal" style="max-width:460px"><div class="modal-head"><div class="modal-title">Report an Issue</div><button class="modal-close" onclick="closeModal('tenantMaintModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><div class="fg"><label class="fl">Issue title *</label><input type="text" class="fi" id="tm-title" placeholder="e.g. Boiler not working"></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Room / area</label><select class="form-select" id="tm-room"><option>Kitchen</option><option>Living Room</option><option>Bedroom</option><option>Bathroom</option><option>Hallway</option><option>Garden / Exterior</option><option>Other</option></select></div><div class="fg" style="margin-bottom:0"><label class="fl">Urgency</label><select class="form-select" id="tm-priority"><option value="low">Low &mdash; not urgent</option><option value="medium" selected>Medium</option><option value="urgent">Urgent &mdash; affecting daily life</option></select></div></div><div class="fg"><label class="fl">Description *</label><textarea class="form-textarea" id="tm-notes" rows="3" placeholder="When did it start? What have you tried?"></textarea></div><div class="fg"><label class="fl">Best time to access</label><input type="text" class="fi" id="tm-access" placeholder="e.g. Weekday mornings"></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('tenantMaintModal')">Cancel</button><button class="btn-save" onclick="submitTenantMaint()"><i class="ti ti-send"></i> Submit</button></div></div></div>
 
 <nav class="mob-nav" id="mobNav">
-  <div class="mob-nav-item active" id="mn-home" onclick="mobNav('home')"><i class="ti ti-layout-dashboard"></i>Home</div>
-  <div class="mob-nav-item" id="mn-bills" onclick="mobNav('bills')"><i id="mn-bills-icon" class="ti ti-receipt-2"></i><span id="mn-bills-lbl">Bills</span></div>
-  <div class="mob-nav-item" id="mn-inv" onclick="mobNav('inv')"><i id="mn-inv-icon" class="ti ti-home-2"></i><span id="mn-inv-lbl">My Home</span></div>
-  <div class="mob-nav-item" id="mn-move" onclick="mobNav('move')"><i id="mn-move-icon" class="ti ti-truck"></i><span id="mn-move-lbl">Moving</span></div>
-  <div class="mob-nav-item" id="mn-xp" onclick="mobNav('xp')"><i class="ti ti-trophy"></i>XP</div>
-  <div class="mob-nav-item" id="mn-menu" onclick="document.getElementById('sidebar').classList.toggle('open')"><i class="ti ti-menu-2"></i>Menu</div>
+  <div class="mob-nav-item active" id="mn-home" onclick="mobNav('home')">
+    <div class="mn-icon-wrap"><i class="ti ti-layout-dashboard"></i></div>
+    <span>Home</span>
+  </div>
+  <div class="mob-nav-item" id="mn-bills" onclick="mobNav('bills')">
+    <div class="mn-icon-wrap"><i class="ti ti-receipt-2"></i><span class="mn-badge" id="mn-bills-badge" style="display:none"></span></div>
+    <span>Bills</span>
+  </div>
+  <div class="mob-nav-item mn-center" id="mn-add" onclick="openAddBill()">
+    <div class="mn-add-btn"><i class="ti ti-plus"></i></div>
+    <span>Add</span>
+  </div>
+  <div class="mob-nav-item" id="mn-compare" onclick="mobNav('compare')">
+    <div class="mn-icon-wrap"><i class="ti ti-arrows-exchange"></i></div>
+    <span>Switch</span>
+  </div>
+  <div class="mob-nav-item" id="mn-more" onclick="mobNav('more')">
+    <div class="mn-icon-wrap"><i class="ti ti-grid-dots"></i></div>
+    <span>More</span>
+  </div>
 </nav>
+
+<!-- Mobile More Menu -->
+<div id="mobMoreMenu" style="display:none;position:fixed;bottom:65px;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:199;padding:16px 12px;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.1)">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div class="mob-more-item" onclick="closeMobMore();nav('moving',null)"><div class="mob-more-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-truck"></i></div><span>Moving</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('vault',null)"><div class="mob-more-icon" style="background:var(--blue-m);color:var(--blue)"><i class="ti ti-vault"></i></div><span>Docs</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('inventory',null)"><div class="mob-more-icon" style="background:var(--purple-m);color:var(--purple)"><i class="ti ti-home-2"></i></div><span>Inventory</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('budget',null)"><div class="mob-more-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-chart-pie-2"></i></div><span>Budget</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('chat',null)"><div class="mob-more-icon" style="background:var(--indigo-m);color:var(--indigo)"><i class="ti ti-robot"></i></div><span>AI Chat</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('bank',null)"><div class="mob-more-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-building-bank"></i></div><span>Bank</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('xp',null)"><div class="mob-more-icon" style="background:var(--red-m);color:var(--red)"><i class="ti ti-trophy"></i></div><span>XP</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('settings',null)"><div class="mob-more-icon" style="background:var(--slate-7);color:var(--slate-3)"><i class="ti ti-settings"></i></div><span>Settings</span></div>
+  </div>
+</div>
+<div id="mobMoreOverlay" onclick="closeMobMore()" style="display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,.3)"></div>
 <div class="toast" id="toast"><i class="ti ti-check-circle"></i><span id="toastMsg">Done</span></div>
 <footer><span>&copy; 2025 LifeLedger Ltd &middot; <a onclick="openModal('disclosureModal');return false" href="#">Affiliate disclosure</a> &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></span><div class="foot-links"><a href="#">Help</a><a onclick="showScreen('landing');return false" href="#">&larr; Homepage</a></div></footer>
 
@@ -2191,16 +2292,20 @@ var RATE_PROVIDERS=[
   {id:'plusnet',name:'Plusnet',cat:'broadband',logo:'🌐',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.plus.net',sponsored:false,
     awinId:'5442',awinUrl:'https://www.awin1.com/cread.php?awinmid=5442&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.plus.net%2F'},
 
-  // ── Direct referral programmes (not on Awin — direct links) ────────────
-  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy/referral/',sponsored:false,
-    awinId:null,awinUrl:null},
+  // ── Energy — on Awin ──────────────────────────────────────────────────
   {id:'british-gas',name:'British Gas',cat:'energy',logo:'🔥',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.britishgas.co.uk',sponsored:false,
+    awinId:'5340',awinUrl:'https://www.awin1.com/cread.php?awinmid=5340&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.britishgas.co.uk%2F'},
+
+  // ── Broadband & TV — on Awin ──────────────────────────────────────────
+  {id:'sky',name:'Sky',cat:'broadband',logo:'📡',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.sky.com/shop/broadband',sponsored:false,
+    awinId:'11005',awinUrl:'https://www.awin1.com/cread.php?awinmid=11005&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.sky.com%2Fshop%2Fbroadband'},
+
+  // ── Direct referral programmes (not on Awin) ──────────────────────────
+  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy/current-account/',sponsored:false,
     awinId:null,awinUrl:null},
   {id:'ovo',name:'OVO Energy',cat:'energy',logo:'🌿',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.ovoenergy.com',sponsored:false,
     awinId:null,awinUrl:null},
   {id:'scottish-power',name:'Scottish Power',cat:'energy',logo:'⚡',logoBg:'var(--purple-m)',logoFg:'var(--purple)',url:'https://www.scottishpower.co.uk',sponsored:false,
-    awinId:null,awinUrl:null},
-  {id:'sky',name:'Sky Broadband',cat:'broadband',logo:'📡',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.sky.com/shop/broadband',sponsored:false,
     awinId:null,awinUrl:null},
   {id:'talktalk',name:'TalkTalk',cat:'broadband',logo:'💬',logoBg:'var(--red-m)',logoFg:'var(--red)',url:'https://www.talktalk.co.uk',sponsored:false,
     awinId:null,awinUrl:null}
@@ -2348,6 +2453,9 @@ function renderDash(){
   var totalSave=liveRates.reduce(function(a,r){return a+(r.saving||0);},0);
   var invVal=inventory.reduce(function(a,i){return a+(parseFloat(i.val)||0);},0);
   var ob=document.getElementById('overdueBadge');if(ob)ob.textContent=overdue.length||'';
+  // Update mobile nav bills badge
+  var mnBadge=document.getElementById('mn-bills-badge');
+  if(mnBadge){mnBadge.style.display=overdue.length?'':'none';}
 
   // ── Empty state (new real account with no bills) ────────────────────────
   var dashGrid=document.getElementById('dashChartGrid');
@@ -5252,7 +5360,32 @@ function navPortal(page){nav_portal(page);}
 function switchMode(mode){currentMode=mode;save('mode',mode);applyMode();closeModal('switchModeModal');nav(mode==='landlord'?'ll-dashboard':'dashboard',null);toast('Switched to '+(mode==='landlord'?'Landlord':'Individual')+' mode','success');}
 
 // ── MOBILE NAV ────────────────────────────────────────────────────────────
-function mobNav(which){document.querySelectorAll('.mob-nav-item').forEach(function(b){b.classList.remove('active');});var btn=document.getElementById('mn-'+which);if(btn)btn.classList.add('active');var m={home:currentMode==='landlord'?'ll-dashboard':'dashboard',bills:'bills',inv:'inventory',move:'moving',xp:'xp'};nav(m[which]||which,null);}
+function mobNav(which){
+  if(which==='more'){
+    var mm=document.getElementById('mobMoreMenu');
+    var mo=document.getElementById('mobMoreOverlay');
+    var isOpen=mm&&mm.style.display!=='none';
+    if(mm)mm.style.display=isOpen?'none':'block';
+    if(mo)mo.style.display=isOpen?'none':'block';
+    // Toggle active on More button
+    document.querySelectorAll('.mob-nav-item').forEach(function(b){b.classList.remove('active');});
+    if(!isOpen){var btn=document.getElementById('mn-more');if(btn)btn.classList.add('active');}
+    return;
+  }
+  closeMobMore();
+  document.querySelectorAll('.mob-nav-item').forEach(function(b){b.classList.remove('active');});
+  var btn=document.getElementById('mn-'+which);if(btn)btn.classList.add('active');
+  var m={home:currentMode==='landlord'?'ll-dashboard':'dashboard',bills:'bills',compare:'compare',inv:'inventory',move:'moving',xp:'xp'};
+  nav(m[which]||which,null);
+}
+function closeMobMore(){
+  var mm=document.getElementById('mobMoreMenu');
+  var mo=document.getElementById('mobMoreOverlay');
+  if(mm)mm.style.display='none';
+  if(mo)mo.style.display='none';
+  // Remove active from more btn if nothing else is active
+  var mn=document.getElementById('mn-more');if(mn)mn.classList.remove('active');
+}
 
 // ── FOOTER LINKS ──────────────────────────────────────────────────────────
 function showPrivacy(){toast('Your data is encrypted and never sold to advertisers.','success');}
