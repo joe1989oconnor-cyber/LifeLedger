@@ -2,6 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+  <!-- Awin Master Tag — loads on every page for attribution tracking -->
+  <script>
+    if (typeof AWIN_PUBLISHER_ID !== 'undefined' && AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID') {
+      (function() {
+        var s = document.createElement('script');
+        s.src = 'https://www.dwin1.com/' + AWIN_PUBLISHER_ID + '.js';
+        s.defer = true;
+        document.head.appendChild(s);
+      })();
+    }
+  </script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d9488">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1956,7 +1967,48 @@ function sBadge(st,due){
   else{cls='upcoming';lbl='Upcoming';}
   return '<span class="badge '+cls+'">'+lbl+'</span>';
 }
-function logClick(prov,src){console.log('[affiliate]',prov,src,new Date().toISOString());}
+function logClick(provId, src) {
+  console.log('[Affiliate] Click:', provId, src, new Date().toISOString());
+
+  // Find provider details
+  var provider = RATE_PROVIDERS.find(function(p) { return p.id === provId; });
+  if (!provider) {
+    // Fallback — open provider's direct URL if not in RATE_PROVIDERS
+    var allProviders = {
+      'sky': 'https://www.sky.com', 'virgin': 'https://www.virginmedia.com',
+      'edf': 'https://www.edfenergy.com', 'british-gas': 'https://www.britishgas.co.uk',
+      'aviva': 'https://www.aviva.co.uk', 'direct-line': 'https://www.directline.com'
+    };
+    var url = allProviders[provId] || '#';
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+
+  // ── Fire Awin tracking pixel ─────────────────────────────────────────────
+  if (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinId) {
+    try {
+      var pixel = new Image();
+      var clickRef = 'LL-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+      pixel.src = 'https://www.awin1.com/sread.php'
+        + '?awinmid=' + provider.awinId
+        + '&awinaffid=' + AWIN_PUBLISHER_ID
+        + '&clickref=' + clickRef
+        + '&p=' + encodeURIComponent(provider.url);
+      console.log('[Awin] Pixel fired for', provider.name, 'clickref:', clickRef);
+    } catch(e) {
+      console.error('[Awin] Pixel error:', e);
+    }
+  } else {
+    console.log('[Awin] Publisher ID not set — tracking not active');
+  }
+
+  // ── Open affiliate or direct URL ─────────────────────────────────────────
+  var destUrl = (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinUrl)
+    ? provider.awinUrl.replace('AWIN_PUBLISHER_ID', AWIN_PUBLISHER_ID)
+    : provider.url;
+
+  window.open(destUrl, '_blank', 'noopener');
+}
 function bestSav(){
   var best=null,bestSave=0;
   bills.forEach(function(b){
@@ -2104,13 +2156,23 @@ function billRow(b,mini){
 // ── LIVE RATES (Anthropic API for real pricing data) ──────────────────────
 var liveRates=[];var ratesFetched=false;var ratesFetching=false;
 var RATE_PROVIDERS=[
-  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy',sponsored:true},
-  {id:'eon',name:'E.ON Next',cat:'energy',logo:'🔆',logoBg:'var(--amber-l)',logoFg:'var(--amber)',url:'https://www.eonenergy.com',sponsored:false},
-  {id:'communityfibre',name:'Community Fibre',cat:'broadband',logo:'📡',logoBg:'var(--teal-xl)',logoFg:'var(--teal)',url:'https://www.communityfibre.co.uk',sponsored:true},
-  {id:'bt',name:'BT Full Fibre',cat:'broadband',logo:'🌐',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.bt.com',sponsored:false},
-  {id:'lv',name:'LV= Insurance',cat:'insurance',logo:'🛡️',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.lv.com',sponsored:true},
-  {id:'admiral',name:'Admiral',cat:'insurance',logo:'⚓',logoBg:'var(--red-m)',logoFg:'var(--red)',url:'https://www.admiral.com',sponsored:false}
+  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy',sponsored:true,
+    awinId:'23370',awinUrl:'https://www.awin1.com/cread.php?awinmid=23370&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Foctopus.energy%2F'},
+  {id:'eon',name:'E.ON Next',cat:'energy',logo:'🔆',logoBg:'var(--amber-l)',logoFg:'var(--amber)',url:'https://www.eonenergy.com',sponsored:false,
+    awinId:'19568',awinUrl:'https://www.awin1.com/cread.php?awinmid=19568&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.eonnext.com%2F'},
+  {id:'communityfibre',name:'Community Fibre',cat:'broadband',logo:'📡',logoBg:'var(--teal-xl)',logoFg:'var(--teal)',url:'https://www.communityfibre.co.uk',sponsored:true,
+    awinId:'22468',awinUrl:'https://www.awin1.com/cread.php?awinmid=22468&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.communityfibre.co.uk%2F'},
+  {id:'bt',name:'BT Full Fibre',cat:'broadband',logo:'🌐',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.bt.com',sponsored:false,
+    awinId:'5271',awinUrl:'https://www.awin1.com/cread.php?awinmid=5271&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.bt.com%2F'},
+  {id:'lv',name:'LV= Insurance',cat:'insurance',logo:'🛡️',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.lv.com',sponsored:true,
+    awinId:'8142',awinUrl:'https://www.awin1.com/cread.php?awinmid=8142&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.lv.com%2F'},
+  {id:'admiral',name:'Admiral',cat:'insurance',logo:'⚓',logoBg:'var(--red-m)',logoFg:'var(--red)',url:'https://www.admiral.com',sponsored:false,
+    awinId:'7072',awinUrl:'https://www.awin1.com/cread.php?awinmid=7072&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.admiral.com%2F'}
 ];
+
+// ── Awin Configuration ─────────────────────────────────────────────────────
+// Replace AWIN_PUBLISHER_ID with your actual Awin Publisher ID from ui.awin.com
+var AWIN_PUBLISHER_ID = 'REPLACE_WITH_YOUR_AWIN_ID';
 
 function loadLiveRates(){
   if(ratesFetching)return;
