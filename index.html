@@ -1959,7 +1959,7 @@ function initData(){
 
 // ── AUTH ───────────────────────────────────────────────────────────────────
 function showScreen(s){
-  var map={'landing':'screen-landing','quiz':'screen-quiz','login':'screen-login','app':'screen-app','tenantPortal':'screen-tenant'};
+  var map={'landing':'screen-landing','quiz':'screen-quiz','login':'screen-login','app':'screen-app','tenantPortal':'screen-tenant','confirm':'screen-confirm'};
   Object.keys(map).forEach(function(key){
     var el=document.getElementById(map[key]);
     if(el)el.classList.toggle('hidden',s!==key);
@@ -2037,6 +2037,11 @@ function createAccount(){
   var p=pEl?pEl.value:'';
   if(!n){toast('Please enter your name','error');if(nEl)nEl.focus();return;}
   if(!e){toast('Please enter your email address','error');if(eEl)eEl.focus();return;}
+  // Validate email format
+  var emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!emailRegex.test(e)){toast('Please enter a valid email address','error');if(eEl)eEl.focus();return;}
+  // Validate password length
+  if(p&&p.length<8){toast('Password must be at least 8 characters','error');if(pEl)pEl.focus();return;}
   currentMode=_quizMode||'individual';
   if(isVercelEnv()&&p){
     sbSignUp(n,e,p,currentMode);
