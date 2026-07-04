@@ -1291,6 +1291,34 @@ footer a:hover{color:var(--teal);}
 </div>
 </div>
 <!-- ══════════════════ APP ══════════════════ -->
+
+<div id="screen-confirm" class="hidden">
+  <div class="auth-screen">
+    <div class="auth-card" style="text-align:center;max-width:420px">
+      <div style="font-size:56px;margin-bottom:16px">📧</div>
+      <div style="font-size:22px;font-weight:800;color:var(--slate);margin-bottom:8px">Check your email</div>
+      <div style="font-size:14px;color:var(--slate-3);line-height:1.7;margin-bottom:24px">
+        We've sent a confirmation link to <strong id="confirmEmail"></strong>.<br>
+        Click the link in the email to activate your account.
+      </div>
+      <div style="background:var(--teal-xl);border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:14px 16px;margin-bottom:20px;text-align:left">
+        <div style="font-size:12.5px;color:var(--slate);line-height:1.6">
+          <strong>Can't find the email?</strong><br>
+          Check your spam or junk folder. The email comes from <em>noreply@supabase.io</em>
+        </div>
+      </div>
+      <button class="btn-teal" style="width:100%;margin-bottom:10px" onclick="resendConfirmEmail()">
+        <i class="ti ti-send"></i> Resend confirmation email
+      </button>
+      <button class="btn-outline" style="width:100%" onclick="showScreen('login')">
+        <i class="ti ti-arrow-left"></i> Back to sign in
+      </button>
+      <div id="resendMsg" style="margin-top:12px;font-size:12.5px;color:var(--teal);display:none">
+        <i class="ti ti-check"></i> Email resent — check your inbox
+      </div>
+    </div>
+  </div>
+</div>
 <div id="screen-app" class="app hidden">
 
 <!-- SIDEBAR -->
@@ -4579,6 +4607,16 @@ function sbSignUp(name, email, password, mode) {
       if (btn) { btn.disabled = false; btn.textContent = 'Create account'; }
       return;
     }
+    // If email confirmation is required, show check email screen
+    if (!data.access_token && data.user && !data.user.confirmed_at) {
+      // Email confirmation enabled — show check email screen
+      var emailEl = document.getElementById('confirmEmail');
+      if (emailEl) emailEl.textContent = email;
+      save('pendingEmail', email);
+      showScreen('confirm');
+      if (btn) { btn.disabled = false; btn.textContent = 'Create account'; }
+      return;
+    }
     sbToken = data.access_token;
     save('sb_token', sbToken);
     save('sb_refresh', data.refresh_token);
@@ -5502,6 +5540,69 @@ function deleteNote(id) {
   renderNotes();
   toast('Note deleted', 'success');
 }
+
+// ── EMAIL CONFIRMATION ────────────────────────────────────────────────────
+function resendConfirmEmail() {
+  var email = load('pendingEmail', '') || (document.getElementById('confirmEmail')||{}).textContent || '';
+  if (!email) { toast('Email address not found', 'error'); return; }
+  var msg = document.getElementById('resendMsg');
+
+  fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/resend', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M'
+    },
+    body: JSON.stringify({ type: 'signup', email: email })
+  })
+  .then(function() {
+    if (msg) { msg.style.display = 'block'; }
+    setTimeout(function() { if (msg) msg.style.display = 'none'; }, 4000);
+  })
+  .catch(function(err) {
+    toast('Could not resend — please try again', 'error');
+    console.error('[Auth] Resend error:', err);
+  });
+}
+
+// ── Handle email confirmation callback ────────────────────────────────────
+(function checkEmailConfirmCallback() {
+  var hash = window.location.hash;
+  if (!hash) return;
+  var params = new URLSearchParams(hash.replace('#', ''));
+  var type = params.get('type');
+  var accessToken = params.get('access_token');
+
+  // Email confirmation callback
+  if (type === 'signup' && accessToken) {
+    window.history.replaceState({}, '', window.location.pathname);
+    sbToken = accessToken;
+    save('sb_token', accessToken);
+    var refresh = params.get('refresh_token');
+    if (refresh) save('sb_refresh', refresh);
+
+    // Get user details
+    fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/user', {
+      headers: {
+        'Authorization': 'Bearer ' + accessToken,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M'
+      }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(user) {
+      if (!user.id) return;
+      var name = (user.user_metadata && user.user_metadata.name) || user.email.split('@')[0];
+      isGuest = false;
+      currentMode = 'individual';
+      sbLoadAllData(function() {
+        enterApp(name, user.email, false);
+        toast('Email confirmed! Welcome to LifeLedger 🎉', 'success');
+      });
+    })
+    .catch(function(err) { console.error('[Auth] Confirm callback error:', err); showScreen('login'); });
+  }
+})();
+
 window.addEventListener('load',function(){
   function hideLoader(){
     var el=document.getElementById('screen-loading');
