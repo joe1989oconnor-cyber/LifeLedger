@@ -2884,17 +2884,54 @@ function cmpRowV2(r,curAmt,curProv){
   var saving=Math.round(curAmt-r.price);
   var hasSaving=saving>0&&!isCurrent;
   var sponsored=r.sponsored||false;
-  // Safe logo fallback — use first letter of provider name if no emoji
-  var logo=r.logo||(r.name?r.name.charAt(0).toUpperCase():'?');
-  var logoBg=r.logoBg||'var(--slate-7)';
-  var logoFg=r.logoFg||'var(--slate-3)';
+
+  // Emoji + colour lookup by provider name or category
+  function getProviderStyle(r){
+    if(r.logo&&r.logoBg)return{logo:r.logo,bg:r.logoBg,fg:r.logoFg||'var(--slate-3)'};
+    var n=(r.name||'').toLowerCase();
+    var cat=(r.cat||r.type||'').toLowerCase();
+    // Energy
+    if(n.indexOf('octopus')>-1)return{logo:'🐙',bg:'var(--purple-m)',fg:'var(--purple)'};
+    if(n.indexOf('british gas')>-1||n.indexOf('britishgas')>-1)return{logo:'🔥',bg:'var(--blue-m)',fg:'var(--blue)'};
+    if(n.indexOf('e.on')>-1||n.indexOf('eon')>-1)return{logo:'⚡',bg:'var(--amber-l)',fg:'var(--amber)'};
+    if(n.indexOf('edf')>-1)return{logo:'⚡',bg:'var(--blue-m)',fg:'var(--blue)'};
+    if(n.indexOf('ovo')>-1)return{logo:'🌿',bg:'var(--green-m)',fg:'var(--green)'};
+    if(n.indexOf('scottish power')>-1)return{logo:'⚡',bg:'var(--purple-m)',fg:'var(--purple)'};
+    if(n.indexOf('bulb')>-1)return{logo:'💡',bg:'var(--amber-m)',fg:'var(--amber)'};
+    if(n.indexOf('shell')>-1)return{logo:'⚡',bg:'var(--amber-m)',fg:'var(--amber)'};
+    if(cat.indexOf('energy')>-1||cat.indexOf('gas')>-1||cat.indexOf('electric')>-1)return{logo:'⚡',bg:'var(--amber-m)',fg:'var(--amber)'};
+    // Broadband
+    if(n.indexOf('virgin')>-1)return{logo:'📡',bg:'var(--red-m)',fg:'var(--red)'};
+    if(n.indexOf('bt ')>-1||n.indexOf('bt f')>-1)return{logo:'🌐',bg:'var(--blue-m)',fg:'var(--blue)'};
+    if(n.indexOf('sky')>-1)return{logo:'📡',bg:'var(--blue-m)',fg:'var(--blue)'};
+    if(n.indexOf('community fibre')>-1)return{logo:'📶',bg:'var(--teal-xl)',fg:'var(--teal)'};
+    if(n.indexOf('vodafone')>-1)return{logo:'📱',bg:'var(--red-m)',fg:'var(--red)'};
+    if(n.indexOf('ee')>-1)return{logo:'📲',bg:'var(--blue-m)',fg:'var(--blue)'};
+    if(n.indexOf('plusnet')>-1)return{logo:'🌐',bg:'var(--green-m)',fg:'var(--green)'};
+    if(n.indexOf('talktalk')>-1)return{logo:'💬',bg:'var(--red-m)',fg:'var(--red)'};
+    if(cat.indexOf('broadband')>-1||cat.indexOf('internet')>-1)return{logo:'📡',bg:'var(--blue-m)',fg:'var(--blue)'};
+    // Mobile
+    if(n.indexOf('o2')>-1)return{logo:'📱',bg:'var(--blue-m)',fg:'var(--blue)'};
+    if(n.indexOf('tesco mobile')>-1)return{logo:'📲',bg:'var(--red-m)',fg:'var(--red)'};
+    if(cat.indexOf('mobile')>-1)return{logo:'📱',bg:'var(--slate-7)',fg:'var(--slate-3)'};
+    // Insurance
+    if(n.indexOf('lv=')>-1||n.indexOf('lv ')>-1)return{logo:'🛡️',bg:'var(--green-m)',fg:'var(--green)'};
+    if(n.indexOf('admiral')>-1)return{logo:'⚓',bg:'var(--red-m)',fg:'var(--red)'};
+    if(n.indexOf('go.compare')>-1||n.indexOf('gocompare')>-1)return{logo:'🔍',bg:'var(--green-m)',fg:'var(--green)'};
+    if(n.indexOf('moneysupermarket')>-1||n.indexOf('money super')>-1)return{logo:'💰',bg:'var(--amber-m)',fg:'var(--amber)'};
+    if(cat.indexOf('insurance')>-1)return{logo:'🛡️',bg:'var(--green-m)',fg:'var(--green)'};
+    // Fallback
+    return{logo:r.name?r.name.charAt(0).toUpperCase():'?',bg:'var(--slate-7)',fg:'var(--slate-3)'};
+  }
+
+  var style=getProviderStyle(r);
   var switchBtn=isCurrent
     ?'<span style="font-size:11px;color:var(--slate-3);font-weight:600">Current plan</span>'
     :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="#" onclick="logClick(\''+r.id+'\',\'compare\');return false;">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch &amp; save £'+saving+'/mo':'<i class="ti ti-arrow-right"></i> View deal')
       +'</a>';
   return '<div class="cmp-item" style="'+(isCurrent?'background:var(--slate-8)':'')+'">'
-    +'<div class="rate-logo" style="background:'+logoBg+';color:'+logoFg+';font-size:'+(logo.length===1?'15px':'20px')+'">'+logo+'</div>'
+    +'<div class="rate-logo" style="background:'+style.bg+';color:'+style.fg+'">'+style.logo+'</div>'
     +'<div class="cmp-info">'
       +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'
         +'<span class="cmp-name">'+r.name+'</span>'
