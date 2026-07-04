@@ -1,6 +1,7 @@
 // api/supabase/data.js
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
@@ -12,7 +13,8 @@ module.exports = async function handler(req, res) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
-  const userRes = await sb(`/auth/v1/user`, 'GET', null, token);
+  // Verify the user token and get userId
+  const userRes = await sbWithKey(`/auth/v1/user`, 'GET', null, token, SUPABASE_ANON_KEY);
   if (!userRes.id) return res.status(401).json({ error: 'Invalid token' });
   const userId = userRes.id;
 
@@ -21,34 +23,43 @@ module.exports = async function handler(req, res) {
   if (!validTables.includes(table)) return res.status(400).json({ error: 'Invalid table: ' + table });
 
   try {
+    // GET — use user's own token so RLS enforces data isolation
     if (req.method === 'GET') {
-      const rows = await sb(`/rest/v1/${table}?user_id=eq.${userId}&order=created_at.asc`, 'GET', null, null, true);
+      const rows = await sbWithKey(
+        `/rest/v1/${table}?user_id=eq.${userId}&order=created_at.asc`,
+        'GET', null, token, SUPABASE_ANON_KEY
+      );
       return res.status(200).json({ data: Array.isArray(rows) ? rows : [] });
     }
 
+    // POST — use service key to insert with user_id
     if (req.method === 'POST') {
       const body = { ...req.body, user_id: userId };
       delete body.id;
-      const row = await sb(`/rest/v1/${table}`, 'POST', body, null, true);
+      const row = await sbWithKey(`/rest/v1/${table}`, 'POST', body, null, SUPABASE_SERVICE_KEY);
       return res.status(201).json({ data: Array.isArray(row) ? row[0] : row });
     }
 
+    // PUT — use service key but always enforce user_id in filter
     if (req.method === 'PUT') {
       if (!id) return res.status(400).json({ error: 'ID required for update' });
       const body = { ...req.body, user_id: userId };
       delete body.id;
-      const row = await sb(`/rest/v1/${table}?id=eq.${id}&user_id=eq.${userId}`, 'PATCH', body, null, true);
+      const row = await sbWithKey(
+        `/rest/v1/${table}?id=eq.${id}&user_id=eq.${userId}`,
+        'PATCH', body, null, SUPABASE_SERVICE_KEY
+      );
       return res.status(200).json({ data: Array.isArray(row) ? row[0] : row });
     }
 
+    // DELETE
     if (req.method === 'DELETE') {
-      // deleteAll=1 means delete all rows for this user in this table (used for budgets)
       if (deleteAll === '1') {
-        await sb(`/rest/v1/${table}?user_id=eq.${userId}`, 'DELETE', null, null, true);
+        await sbWithKey(`/rest/v1/${table}?user_id=eq.${userId}`, 'DELETE', null, null, SUPABASE_SERVICE_KEY);
         return res.status(200).json({ success: true });
       }
       if (!id) return res.status(400).json({ error: 'ID required for delete' });
-      await sb(`/rest/v1/${table}?id=eq.${id}&user_id=eq.${userId}`, 'DELETE', null, null, true);
+      await sbWithKey(`/rest/v1/${table}?id=eq.${id}&user_id=eq.${userId}`, 'DELETE', null, null, SUPABASE_SERVICE_KEY);
       return res.status(200).json({ success: true });
     }
 
@@ -60,12 +71,11 @@ module.exports = async function handler(req, res) {
   }
 };
 
-async function sb(path, method, body, token, service) {
-  const key = service ? SUPABASE_SERVICE_KEY : process.env.SUPABASE_ANON_KEY;
+async function sbWithKey(path, method, body, userToken, apiKey) {
   const headers = {
     'Content-Type': 'application/json',
-    'apikey': key,
-    'Authorization': `Bearer ${token || key}`,
+    'apikey': apiKey,
+    'Authorization': `Bearer ${userToken || apiKey}`,
     'Prefer': 'return=representation'
   };
   const r = await fetch(`${SUPABASE_URL}${path}`, {
