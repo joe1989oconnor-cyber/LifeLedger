@@ -4607,9 +4607,8 @@ function sbSignUp(name, email, password, mode) {
       if (btn) { btn.disabled = false; btn.textContent = 'Create account'; }
       return;
     }
-    // If email confirmation is required, show check email screen
-    if (!data.access_token && data.user && !data.user.confirmed_at) {
-      // Email confirmation enabled — show check email screen
+    // Email confirmation required
+    if (data.requiresConfirmation) {
       var emailEl = document.getElementById('confirmEmail');
       if (emailEl) emailEl.textContent = email;
       save('pendingEmail', email);
