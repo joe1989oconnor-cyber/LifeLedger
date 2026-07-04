@@ -1074,6 +1074,26 @@ footer a:hover{color:var(--teal);}
   .quiz-opt{padding:14px 16px;font-size:14px;}
   .fi{font-size:16px;padding:13px 14px;}/* Prevents iOS zoom */
 }
+
+/* ── Notes ────────────────────────────────────────────────────────────── */
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.note-card{border-radius:12px;padding:14px 15px;border:1px solid var(--border);cursor:pointer;transition:box-shadow .15s,transform .15s;position:relative;}
+.note-card:hover{box-shadow:var(--sh);transform:translateY(-1px);}
+.note-card-title{font-size:13.5px;font-weight:700;margin-bottom:6px;color:var(--slate);}
+.note-card-body{font-size:12.5px;color:var(--slate-2);line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+.note-card-date{font-size:10.5px;color:var(--slate-4);margin-top:8px;}
+.note-card-actions{position:absolute;top:8px;right:8px;display:none;gap:4px;}
+.note-card:hover .note-card-actions{display:flex;}
+.note-colour-btn.selected{outline:3px solid var(--teal);outline-offset:2px;}
+.note-col-default{background:var(--white);}
+.note-col-yellow{background:#fef9c3;}
+.note-col-blue{background:#dbeafe;}
+.note-col-green{background:#dcfce7;}
+.note-col-pink{background:#fce7f3;}
+@media(max-width:600px){
+  .notes-grid{grid-template-columns:1fr;}
+  .note-card-actions{display:flex;}
+}
 </style>
 </head>
 <body>
@@ -1593,6 +1613,28 @@ footer a:hover{color:var(--teal);}
 <div class="page" id="page-ll-income"></div>
 <div class="page" id="page-ll-reports"></div>
 
+  <div class="page" id="page-vehicle">
+    <div class="page-head">
+      <div class="ph-left">
+        <div class="page-title">My Vehicle</div>
+        <div class="page-sub">MOT, tax, insurance &amp; service tracking</div>
+      </div>
+      <button class="btn-add keep-mobile" onclick="openAddVehicle()"><i class="ti ti-plus"></i> Add Vehicle</button>
+    </div>
+    <div id="vehicleContent"></div>
+  </div>
+
+  <div class="page" id="page-notes">
+    <div class="page-head">
+      <div class="ph-left">
+        <div class="page-title">Notes</div>
+        <div class="page-sub">Quick notes and reminders</div>
+      </div>
+      <button class="btn-add keep-mobile" onclick="openAddNote()"><i class="ti ti-plus"></i> New Note</button>
+    </div>
+    <div id="notesContent"></div>
+  </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -1689,7 +1731,9 @@ footer a:hover{color:var(--teal);}
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
     <div class="mob-more-item" onclick="closeMobMore();nav('moving',null)"><div class="mob-more-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-truck"></i></div><span>Moving</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('vault',null)"><div class="mob-more-icon" style="background:var(--blue-m);color:var(--blue)"><i class="ti ti-vault"></i></div><span>Docs</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('notes',null)"><div class="mob-more-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-note"></i></div><span>Notes</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('inventory',null)"><div class="mob-more-icon" style="background:var(--purple-m);color:var(--purple)"><i class="ti ti-home-2"></i></div><span>Inventory</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('vehicle',null)"><div class="mob-more-icon" style="background:var(--blue-m);color:var(--blue)"><i class="ti ti-car"></i></div><span>Vehicle</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('budget',null)"><div class="mob-more-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-chart-pie-2"></i></div><span>Budget</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('chat',null)"><div class="mob-more-icon" style="background:var(--indigo-m);color:var(--indigo)"><i class="ti ti-robot"></i></div><span>AI Chat</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('bank',null)"><div class="mob-more-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-building-bank"></i></div><span>Bank</span></div>
@@ -2001,7 +2045,9 @@ var IND_NAV='\
 <div class="nav-section">Life Admin</div>\
 <button class="nav-item" onclick="nav(\'moving\',this)"><i class="ti ti-truck"></i>Moving Hub</button>\
 <button class="nav-item" onclick="nav(\'inventory\',this)"><i class="ti ti-home-2"></i>Room Inventory</button>\
+<button class="nav-item" onclick="nav(\'vehicle\',this)"><i class="ti ti-car"></i>My Vehicle</button>\
 <button class="nav-item" onclick="nav(\'vault\',this)"><i class="ti ti-vault"></i>Doc Vault</button>\
+<button class="nav-item" onclick="nav(\'notes\',this)"><i class="ti ti-note"></i>Notes</button>\
 <button class="nav-item" onclick="nav(\'chat\',this)"><i class="ti ti-robot"></i>AI Assistant</button>\
 <button class="nav-item" onclick="nav(\'insights\',this)"><i class="ti ti-sparkles"></i>AI Insights</button>\
 <div class="nav-section">Account</div>\
@@ -2082,7 +2128,7 @@ function applyMode(){
 }
 
 // ── NAV ────────────────────────────────────────────────────────────────────
-var titlesMap={
+var titlesMap={vehicle:'My Vehicle',notes:'Notes',
   'dashboard':'Dashboard','bills':'My Bills','compare':'Compare & Switch',
   'budget':'Budget','calendar':'Calendar','moving':'Moving Hub',
   'calculator':'Cost Calculator','wizard':'Setup Wizard',
@@ -2116,6 +2162,8 @@ function nav(page,el){
   else if(page==='insights')renderInsights();
   else if(page==='chat')initChat();
   else if(page==='bank')renderBank();
+  else if(page==='vehicle')renderVehicle();
+  else if(page==='notes')renderNotes();
   else if(page==='xp')renderXP();
   else if(page==='upgrade')renderUpgrade();
   else if(page==='ll-dashboard')renderLLDashboard();
@@ -5009,6 +5057,365 @@ function sendPasswordReset() {
   });
 })();
 
+
+// ══════════════════════════════════════════════════════════════════════════
+// VEHICLE FEATURE
+// ══════════════════════════════════════════════════════════════════════════
+var vehicles = load('vehicles', []);
+var nextVehicleId = vehicles.length + 1;
+
+function renderVehicle() {
+  vehicles = load('vehicles', []);
+  var el = document.getElementById('vehicleContent');
+  if (!el) return;
+
+  if (!vehicles.length) {
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;max-width:440px;margin:0 auto">'
+      + '<div style="font-size:50px;margin-bottom:14px">🚗</div>'
+      + '<div style="font-size:18px;font-weight:800;margin-bottom:8px;color:var(--slate)">No vehicles yet</div>'
+      + '<div style="font-size:13.5px;color:var(--slate-3);line-height:1.7;margin-bottom:22px">Add your vehicle and LifeLedger will track your MOT, tax, insurance and service dates — with reminders before they expire.</div>'
+      + '<button class="btn-save" style="display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:11px;font-size:13.5px" onclick="openAddVehicle()"><i class="ti ti-plus"></i> Add your vehicle</button>'
+      + '</div>';
+    return;
+  }
+
+  var html = vehicles.map(function(v) {
+    var today = new Date();
+    var alerts = [];
+    var warn = function(label, dateStr) {
+      if (!dateStr) return;
+      var d = new Date(dateStr);
+      var days = Math.round((d - today) / 86400000);
+      if (days < 0) alerts.push({label: label, msg: 'Expired ' + Math.abs(days) + ' days ago', col: 'var(--red)', bg: 'var(--red-m)'});
+      else if (days <= 30) alerts.push({label: label, msg: days + ' days remaining', col: 'var(--amber)', bg: 'var(--amber-m)'});
+      else if (days <= 90) alerts.push({label: label, msg: days + ' days remaining', col: 'var(--teal)', bg: 'var(--teal-xl)'});
+    };
+    warn('MOT', v.mot);
+    warn('Tax', v.tax);
+    warn('Insurance', v.insurance);
+    warn('Service due', v.nextService);
+
+    var alertHtml = alerts.map(function(a) {
+      return '<div style="display:inline-flex;align-items:center;gap:5px;background:' + a.bg + ';color:' + a.col + ';border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;margin:2px">'
+        + a.label + ': ' + a.msg + '</div>';
+    }).join('');
+
+    var plateHtml = '<div style="display:inline-block;background:#f5f0e8;border:2px solid #1a1a2e;border-radius:6px;padding:4px 14px;font:900 18px/1 Arial,sans-serif;letter-spacing:3px;color:#1a1a2e;font-weight:900;margin-bottom:10px">'
+      + (v.reg || 'REG') + '</div>';
+
+    var dateRow = function(label, val) {
+      if (!val) return '';
+      var d = new Date(val);
+      var days = Math.round((d - today) / 86400000);
+      var col = days < 0 ? 'var(--red)' : days <= 30 ? 'var(--amber)' : 'var(--slate-3)';
+      return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">'
+        + '<span style="font-size:12.5px;color:var(--slate-3)">' + label + '</span>'
+        + '<span style="font-size:12.5px;font-weight:700;color:' + col + '">' + fmtD(val) + '</span>'
+        + '</div>';
+    };
+
+    return '<div class="card" style="margin-bottom:14px">'
+      + '<div class="card-body">'
+        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'
+          + '<div>'
+            + plateHtml
+            + '<div style="font-size:15px;font-weight:800;color:var(--slate)">' + (v.make || '') + ' ' + (v.model || '') + '</div>'
+            + '<div style="font-size:12px;color:var(--slate-3);margin-top:2px">'
+              + [v.year, v.colour, v.fuel, v.engine].filter(Boolean).join(' · ')
+            + '</div>'
+          + '</div>'
+          + '<div style="display:flex;gap:6px">'
+            + '<button class="btn-xs bxs-teal" onclick="editVehicle(' + v.id + ')"><i class="ti ti-edit"></i></button>'
+            + '<button class="btn-xs bxs-red" onclick="deleteVehicle(' + v.id + ')"><i class="ti ti-trash"></i></button>'
+          + '</div>'
+        + '</div>'
+        + (alertHtml ? '<div style="margin-bottom:10px">' + alertHtml + '</div>' : '')
+        + '<div style="border-top:1px solid var(--border);padding-top:10px">'
+          + dateRow('MOT Expiry', v.mot)
+          + dateRow('Tax (VED) Due', v.tax)
+          + dateRow('Insurance Renewal', v.insurance)
+          + dateRow('Last Service', v.lastService)
+          + dateRow('Next Service', v.nextService)
+          + (v.mileage ? '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:12.5px;color:var(--slate-3)">Mileage</span><span style="font-size:12.5px;font-weight:700">' + parseInt(v.mileage).toLocaleString() + ' miles</span></div>' : '')
+          + (v.breakdown ? '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="font-size:12.5px;color:var(--slate-3)">Breakdown Cover</span><span style="font-size:12.5px;font-weight:700">' + v.breakdown + '</span></div>' : '')
+          + (v.notes ? '<div style="font-size:12px;color:var(--slate-3);padding-top:8px;font-style:italic">' + v.notes + '</div>' : '')
+        + '</div>'
+        + (v.motHistory && v.motHistory.length ? renderMotHistory(v.motHistory) : '')
+      + '</div>'
+    + '</div>';
+  }).join('');
+
+  el.innerHTML = html;
+}
+
+function renderMotHistory(history) {
+  var rows = history.map(function(t) {
+    var pass = t.result === 'PASSED';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">'
+      + '<span style="width:52px;font-size:11px;font-weight:800;color:' + (pass ? 'var(--green)' : 'var(--red)') + ';background:' + (pass ? 'var(--green-m)' : 'var(--red-m)') + ';border-radius:4px;padding:2px 6px;text-align:center">' + (pass ? 'PASS' : 'FAIL') + '</span>'
+      + '<span style="font-size:12px;flex:1">' + (t.date ? t.date.slice(0,10) : '') + '</span>'
+      + '<span style="font-size:12px;color:var(--slate-3)">' + (t.mileage ? parseInt(t.mileage).toLocaleString() + ' mi' : '') + '</span>'
+      + '</div>';
+  }).join('');
+
+  return '<div style="margin-top:12px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--slate-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">MOT History</div>'
+    + rows
+    + '</div>';
+}
+
+function openAddVehicle() {
+  document.getElementById('vehicleModalTitle').textContent = 'Add Vehicle';
+  document.getElementById('editVehicleId').value = '';
+  ['vReg','vMake','vModel','vYear','vColour','vEngine','vMot','vTax','vInsurance','vLastService','vNextService','vMileage','vBreakdown','vNotes'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('lookupStatus').textContent = '';
+  openModal('addVehicleModal');
+  setTimeout(function(){ var r=document.getElementById('vReg'); if(r)r.focus(); }, 300);
+}
+
+function lookupVehicle() {
+  var reg = (document.getElementById('vReg').value || '').replace(/s/g,'').toUpperCase();
+  if (!reg) { toast('Please enter a registration number', 'error'); return; }
+  var btn = document.getElementById('lookupBtn');
+  var status = document.getElementById('lookupStatus');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Looking up...';
+  status.textContent = 'Searching DVLA records...';
+
+  fetch('/api/vehicle/lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ registration: reg })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-search"></i> Look up';
+    if (d.error) { status.textContent = d.error; return; }
+    if (d.source === 'manual') {
+      status.textContent = d.message || 'Enter details manually below';
+      return;
+    }
+    // Populate fields
+    if (d.make) document.getElementById('vMake').value = d.make;
+    if (d.model) document.getElementById('vModel').value = d.model;
+    if (d.year) document.getElementById('vYear').value = d.year;
+    if (d.colour) document.getElementById('vColour').value = d.colour.charAt(0).toUpperCase() + d.colour.slice(1).toLowerCase();
+    if (d.fuelType) {
+      var fuel = document.getElementById('vFuel');
+      var ft = d.fuelType.charAt(0) + d.fuelType.slice(1).toLowerCase();
+      for (var i = 0; i < fuel.options.length; i++) {
+        if (fuel.options[i].text.toLowerCase() === d.fuelType.toLowerCase()) { fuel.selectedIndex = i; break; }
+      }
+    }
+    if (d.engineSize) document.getElementById('vEngine').value = d.engineSize;
+    if (d.motExpiry) document.getElementById('vMot').value = d.motExpiry;
+    if (d.taxDue) document.getElementById('vTax').value = d.taxDue;
+    status.innerHTML = '<span style="color:var(--green)"><i class="ti ti-check"></i> Vehicle found — details auto-filled. Check and add missing dates below.</span>';
+    // Store MOT history on the window for saving
+    window._lookupMotHistory = d.motHistory || [];
+    window._lookupMake = d.make || '';
+  })
+  .catch(function(err) {
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-search"></i> Look up';
+    status.textContent = 'Lookup failed — please enter details manually';
+    console.error('[Vehicle lookup]', err);
+  });
+}
+
+function saveVehicle() {
+  var reg = (document.getElementById('vReg').value || '').replace(/s/g,'').toUpperCase();
+  if (!reg) { toast('Registration number required', 'error'); return; }
+  var eid = document.getElementById('editVehicleId').value;
+  var vehicle = {
+    id: eid ? parseInt(eid) : nextVehicleId++,
+    reg: reg,
+    make: document.getElementById('vMake').value || '',
+    model: document.getElementById('vModel').value || '',
+    year: document.getElementById('vYear').value || '',
+    colour: document.getElementById('vColour').value || '',
+    fuel: document.getElementById('vFuel').value || '',
+    engine: document.getElementById('vEngine').value || '',
+    mot: document.getElementById('vMot').value || '',
+    tax: document.getElementById('vTax').value || '',
+    insurance: document.getElementById('vInsurance').value || '',
+    lastService: document.getElementById('vLastService').value || '',
+    nextService: document.getElementById('vNextService').value || '',
+    mileage: document.getElementById('vMileage').value || '',
+    breakdown: document.getElementById('vBreakdown').value || '',
+    notes: document.getElementById('vNotes').value || '',
+    motHistory: window._lookupMotHistory || []
+  };
+
+  if (eid) {
+    vehicles = vehicles.map(function(v) { return v.id === parseInt(eid) ? vehicle : v; });
+  } else {
+    vehicles.push(vehicle);
+    awardXP(20, 'vehicle');
+  }
+
+  save('vehicles', vehicles);
+  closeModal('addVehicleModal');
+  renderVehicle();
+  toast((eid ? 'Vehicle updated' : 'Vehicle added! +20 XP'), 'success');
+  window._lookupMotHistory = [];
+}
+
+function editVehicle(id) {
+  var v = vehicles.find(function(x) { return x.id === id; });
+  if (!v) return;
+  document.getElementById('vehicleModalTitle').textContent = 'Edit Vehicle';
+  document.getElementById('editVehicleId').value = v.id;
+  document.getElementById('vReg').value = v.reg || '';
+  document.getElementById('vMake').value = v.make || '';
+  document.getElementById('vModel').value = v.model || '';
+  document.getElementById('vYear').value = v.year || '';
+  document.getElementById('vColour').value = v.colour || '';
+  document.getElementById('vEngine').value = v.engine || '';
+  document.getElementById('vMot').value = v.mot || '';
+  document.getElementById('vTax').value = v.tax || '';
+  document.getElementById('vInsurance').value = v.insurance || '';
+  document.getElementById('vLastService').value = v.lastService || '';
+  document.getElementById('vNextService').value = v.nextService || '';
+  document.getElementById('vMileage').value = v.mileage || '';
+  document.getElementById('vBreakdown').value = v.breakdown || '';
+  document.getElementById('vNotes').value = v.notes || '';
+  var fuel = document.getElementById('vFuel');
+  for (var i = 0; i < fuel.options.length; i++) {
+    if (fuel.options[i].text === v.fuel) { fuel.selectedIndex = i; break; }
+  }
+  document.getElementById('lookupStatus').textContent = '';
+  window._lookupMotHistory = v.motHistory || [];
+  openModal('addVehicleModal');
+}
+
+function deleteVehicle(id) {
+  if (!confirm('Remove this vehicle?')) return;
+  vehicles = vehicles.filter(function(v) { return v.id !== id; });
+  save('vehicles', vehicles);
+  renderVehicle();
+  toast('Vehicle removed', 'success');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NOTES FEATURE
+// ══════════════════════════════════════════════════════════════════════════
+var notes = load('notes', []);
+var nextNoteId = notes.length + 1;
+var _noteColour = 'default';
+
+function renderNotes() {
+  notes = load('notes', []);
+  var el = document.getElementById('notesContent');
+  if (!el) return;
+
+  if (!notes.length) {
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;max-width:440px;margin:0 auto">'
+      + '<div style="font-size:50px;margin-bottom:14px">📝</div>'
+      + '<div style="font-size:18px;font-weight:800;margin-bottom:8px;color:var(--slate)">No notes yet</div>'
+      + '<div style="font-size:13.5px;color:var(--slate-3);line-height:1.7;margin-bottom:22px">Jot down meter readings, policy numbers, landlord contacts, reminders — anything useful.</div>'
+      + '<button class="btn-save" style="display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:11px;font-size:13.5px" onclick="openAddNote()"><i class="ti ti-plus"></i> Add first note</button>'
+      + '</div>';
+    return;
+  }
+
+  // Pinned first, then by date
+  var sorted = notes.slice().sort(function(a,b){
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return new Date(b.updated||b.created) - new Date(a.updated||a.created);
+  });
+
+  var html = '<div class="notes-grid">' + sorted.map(function(n) {
+    var colClass = 'note-col-' + (n.colour || 'default');
+    var bodyPreview = (n.body || '').slice(0, 200) + ((n.body||'').length > 200 ? '...' : '');
+    var dateStr = n.updated ? 'Edited ' + fmtD(n.updated) : fmtD(n.created);
+    return '<div class="note-card ' + colClass + '" onclick="editNote(' + n.id + ')">'
+      + '<div class="note-card-actions">'
+        + '<button class="btn-xs" onclick="event.stopPropagation();pinNote(' + n.id + ')" title="' + (n.pinned?'Unpin':'Pin') + '" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">' + (n.pinned ? '📌' : '📋') + '</button>'
+        + '<button class="btn-xs bxs-red" onclick="event.stopPropagation();deleteNote(' + n.id + ')"><i class="ti ti-trash"></i></button>'
+      + '</div>'
+      + (n.pinned ? '<div style="font-size:10px;color:var(--teal);font-weight:700;margin-bottom:4px">📌 PINNED</div>' : '')
+      + '<div class="note-card-title">' + (n.title || 'Untitled') + '</div>'
+      + (bodyPreview ? '<div class="note-card-body">' + bodyPreview + '</div>' : '')
+      + '<div class="note-card-date">' + dateStr + '</div>'
+    + '</div>';
+  }).join('') + '</div>';
+
+  el.innerHTML = html;
+}
+
+function openAddNote() {
+  document.getElementById('noteModalTitle').textContent = 'New Note';
+  document.getElementById('editNoteId').value = '';
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteBody').value = '';
+  selectNoteColour('default');
+  openModal('noteModal');
+  setTimeout(function(){ document.getElementById('noteTitle').focus(); }, 300);
+}
+
+function selectNoteColour(col) {
+  _noteColour = col;
+  document.getElementById('noteColour').value = col;
+  document.querySelectorAll('.note-colour-btn').forEach(function(btn) {
+    btn.classList.toggle('selected', btn.dataset.col === col);
+  });
+}
+
+function saveNote() {
+  var title = document.getElementById('noteTitle').value.trim();
+  var body = document.getElementById('noteBody').value.trim();
+  if (!title && !body) { toast('Please enter a title or note', 'error'); return; }
+  var eid = document.getElementById('editNoteId').value;
+  var now = new Date().toISOString().slice(0,10);
+
+  if (eid) {
+    notes = notes.map(function(n) {
+      if (n.id === parseInt(eid)) {
+        return Object.assign({}, n, {title:title, body:body, colour:_noteColour, updated:now});
+      }
+      return n;
+    });
+    toast('Note updated', 'success');
+  } else {
+    notes.push({id: nextNoteId++, title:title, body:body, colour:_noteColour, pinned:false, created:now, updated:null});
+    toast('Note saved', 'success');
+    awardXP(5, 'note');
+  }
+
+  save('notes', notes);
+  closeModal('noteModal');
+  renderNotes();
+}
+
+function editNote(id) {
+  var n = notes.find(function(x) { return x.id === id; });
+  if (!n) return;
+  document.getElementById('noteModalTitle').textContent = 'Edit Note';
+  document.getElementById('editNoteId').value = n.id;
+  document.getElementById('noteTitle').value = n.title || '';
+  document.getElementById('noteBody').value = n.body || '';
+  selectNoteColour(n.colour || 'default');
+  openModal('noteModal');
+}
+
+function pinNote(id) {
+  notes = notes.map(function(n) {
+    if (n.id === id) return Object.assign({}, n, {pinned: !n.pinned});
+    return n;
+  });
+  save('notes', notes);
+  renderNotes();
+}
+
+function deleteNote(id) {
+  if (!confirm('Delete this note?')) return;
+  notes = notes.filter(function(n) { return n.id !== id; });
+  save('notes', notes);
+  renderNotes();
+  toast('Note deleted', 'success');
+}
 window.addEventListener('load',function(){
   function hideLoader(){
     var el=document.getElementById('screen-loading');
@@ -6115,6 +6522,98 @@ function importSelectedBills(){
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeModal('forgotModal')">Cancel</button>
       <button class="btn-save" id="forgotBtn" onclick="sendPasswordReset()"><i class="ti ti-send"></i> Send reset link</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="addVehicleModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <div class="modal-title" id="vehicleModalTitle">Add Vehicle</div>
+      <button class="modal-close" onclick="closeModal('addVehicleModal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editVehicleId" value="">
+      <div class="fg">
+        <label class="fl">Registration Number</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="fi" id="vReg" placeholder="e.g. AB12 CDE" style="text-transform:uppercase;flex:1;letter-spacing:2px;font-weight:700;font-size:16px">
+          <button class="btn-save" onclick="lookupVehicle()" id="lookupBtn" style="white-space:nowrap;padding:0 16px"><i class="ti ti-search"></i> Look up</button>
+        </div>
+        <div id="lookupStatus" style="font-size:12px;color:var(--slate-3);margin-top:5px"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="fg"><label class="fl">Make</label><input type="text" class="fi" id="vMake" placeholder="e.g. Ford"></div>
+        <div class="fg"><label class="fl">Model</label><input type="text" class="fi" id="vModel" placeholder="e.g. Focus"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="fg"><label class="fl">Year</label><input type="text" class="fi" id="vYear" placeholder="e.g. 2020"></div>
+        <div class="fg"><label class="fl">Colour</label><input type="text" class="fi" id="vColour" placeholder="e.g. Blue"></div>
+      </div>
+      <div class="form-row-2">
+        <div class="fg"><label class="fl">Fuel Type</label>
+          <select class="fi" id="vFuel">
+            <option>Petrol</option><option>Diesel</option><option>Electric</option><option>Hybrid</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Engine Size</label><input type="text" class="fi" id="vEngine" placeholder="e.g. 1600cc"></div>
+      </div>
+      <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--slate-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Key Dates</div>
+        <div class="form-row-2">
+          <div class="fg"><label class="fl">MOT Expiry</label><input type="date" class="fi" id="vMot"></div>
+          <div class="fg"><label class="fl">Tax (VED) Due</label><input type="date" class="fi" id="vTax"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="fg"><label class="fl">Insurance Renewal</label><input type="date" class="fi" id="vInsurance"></div>
+          <div class="fg"><label class="fl">Last Service</label><input type="date" class="fi" id="vLastService"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="fg"><label class="fl">Next Service Due</label><input type="date" class="fi" id="vNextService"></div>
+          <div class="fg"><label class="fl">Mileage</label><input type="number" class="fi" id="vMileage" placeholder="e.g. 45000"></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Breakdown Cover Provider</label><input type="text" class="fi" id="vBreakdown" placeholder="e.g. AA, RAC, Green Flag"></div>
+      <div class="fg"><label class="fl">Notes</label><input type="text" class="fi" id="vNotes" placeholder="e.g. Finance ends March 2026"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('addVehicleModal')">Cancel</button>
+      <button class="btn-save" onclick="saveVehicle()"><i class="ti ti-check"></i> Save Vehicle</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="noteModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <div class="modal-title" id="noteModalTitle">New Note</div>
+      <button class="modal-close" onclick="closeModal('noteModal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editNoteId" value="">
+      <div class="fg">
+        <label class="fl">Title</label>
+        <input type="text" class="fi" id="noteTitle" placeholder="Note title...">
+      </div>
+      <div class="fg">
+        <label class="fl">Note</label>
+        <textarea class="fi" id="noteBody" rows="8" placeholder="Write your note here..." style="resize:vertical;line-height:1.6"></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <label class="fl" style="margin:0">Colour</label>
+        <div style="display:flex;gap:6px">
+          <div class="note-colour-btn" data-col="default" onclick="selectNoteColour('default')" style="width:22px;height:22px;border-radius:50%;background:var(--white);border:2px solid var(--border);cursor:pointer"></div>
+          <div class="note-colour-btn" data-col="yellow" onclick="selectNoteColour('yellow')" style="width:22px;height:22px;border-radius:50%;background:#fef9c3;border:2px solid #fde047;cursor:pointer"></div>
+          <div class="note-colour-btn" data-col="blue" onclick="selectNoteColour('blue')" style="width:22px;height:22px;border-radius:50%;background:#dbeafe;border:2px solid #93c5fd;cursor:pointer"></div>
+          <div class="note-colour-btn" data-col="green" onclick="selectNoteColour('green')" style="width:22px;height:22px;border-radius:50%;background:#dcfce7;border:2px solid #86efac;cursor:pointer"></div>
+          <div class="note-colour-btn" data-col="pink" onclick="selectNoteColour('pink')" style="width:22px;height:22px;border-radius:50%;background:#fce7f3;border:2px solid #f9a8d4;cursor:pointer"></div>
+        </div>
+      </div>
+      <input type="hidden" id="noteColour" value="default">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('noteModal')">Cancel</button>
+      <button class="btn-save" onclick="saveNote()"><i class="ti ti-check"></i> Save Note</button>
     </div>
   </div>
 </div>
