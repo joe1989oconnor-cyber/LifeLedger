@@ -5677,19 +5677,50 @@ window.addEventListener('load',function(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='flex';
   }
-  // Route hash callbacks — recovery, signup confirmation, Google OAuth
+  // ── Route URL callbacks BEFORE session restore ───────────────────────────
   var _urlHash = window.location.hash;
   var _urlSearch = window.location.search;
 
-  // Check query params first (Supabase PKCE flow uses ?type=recovery&token=xxx)
+  // Check for error params
+  var _errQp = new URLSearchParams(_urlSearch);
+  if (_errQp.get('error') === 'reset_link_expired') {
+    hideLoader();
+    showScreen('login');
+    toast('Reset link has expired — please request a new one', 'error');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+
+  // Check hash for access_token (recovery, signup, Google OAuth)
+  if (_urlHash && _urlHash.indexOf('access_token') >= 0) {
+    // Read type BEFORE clearing hash
+    var _hp = new URLSearchParams(_urlHash.replace('#',''));
+    var _cbType = _hp.get('type');
+    var _cbToken = _hp.get('access_token');
+    hideLoader();
+    // Clear hash from URL
+    window.history.replaceState({}, '', window.location.pathname);
+    if (_cbType === 'recovery') {
+      // Password reset — MUST show password form, never sign in
+      showPasswordResetForm(_cbToken);
+    } else if (_cbType === 'signup') {
+      checkEmailConfirmCallback();
+    } else {
+      // Google OAuth
+      checkAuthCallback();
+    }
+    return;
+  }
+
+  // Check query params (PKCE flow — token_hash in query string)
   var _qp = new URLSearchParams(_urlSearch);
-  if (_qp.get('type') === 'recovery' || _qp.get('type') === 'signup') {
-    var _qtype = _qp.get('type');
-    var _qtoken = _qp.get('token_hash') || _qp.get('token') || '';
+  var _qtype = _qp.get('type');
+  var _qtoken = _qp.get('token_hash') || _qp.get('token') || '';
+  if (_qtype && _qtoken) {
     hideLoader();
     window.history.replaceState({}, '', window.location.pathname);
     if (_qtype === 'recovery') {
-      // Exchange token for session then show password form
+      // Verify token then show password form
       fetch('https://siigmudvxizdzwcxqpnh.supabase.co/auth/v1/verify', {
         method: 'POST',
         headers: {
@@ -5700,32 +5731,13 @@ window.addEventListener('load',function(){
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        var accessToken = d.access_token || (d.session && d.session.access_token);
-        if (accessToken) {
-          showPasswordResetForm(accessToken);
-        } else {
-          toast('Reset link expired — please request a new one', 'error');
-          showScreen('login');
-        }
+        var at = d.access_token || (d.session && d.session.access_token);
+        if (at) { showPasswordResetForm(at); }
+        else { showScreen('login'); toast('Reset link expired', 'error'); }
       })
       .catch(function() { showScreen('login'); });
-    }
-    return;
-  }
-
-  // Check hash (older Supabase implicit flow)
-  if (_urlHash && _urlHash.indexOf('access_token') >= 0) {
-    var _hp = new URLSearchParams(_urlHash.replace('#',''));
-    var _type = _hp.get('type');
-    var _token = _hp.get('access_token');
-    hideLoader();
-    if (_type === 'recovery') {
-      window.history.replaceState({}, '', window.location.pathname);
-      showPasswordResetForm(_token);
-    } else if (_type === 'signup') {
+    } else if (_qtype === 'signup') {
       checkEmailConfirmCallback();
-    } else {
-      checkAuthCallback();
     }
     return;
   }
