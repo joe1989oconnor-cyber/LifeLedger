@@ -2068,8 +2068,12 @@ function initBlank(){
    'comp','income','propInv','xp','pro','moveDone'].forEach(function(k){
     try{localStorage.removeItem('ll_'+k);}catch(e){}
   });
-  vehicles=[];save('vehicles',[]);
-  notes=[];save('notes',[]);
+  vehicles=[];notes=[];
+  ['bills','budgets','docs','inventory','members','props','tenants','maint',
+   'comp','income','propInv','xp','pro','moveDone','vehicles','notes',
+   'moveFrom','moveTo','moveDate'].forEach(function(k){
+    try{localStorage.removeItem('ll_'+k);}catch(e){}
+  });
 }
 
 // ── MODE ───────────────────────────────────────────────────────────────────
@@ -5208,11 +5212,12 @@ function sendPasswordReset() {
 // ══════════════════════════════════════════════════════════════════════════
 // VEHICLE FEATURE
 // ══════════════════════════════════════════════════════════════════════════
-var vehicles = load('vehicles', []);
-var nextVehicleId = vehicles.length + 1;
+var vehicles = [];
+var nextVehicleId = 1;
 
 function renderVehicle() {
-  vehicles = load('vehicles', []);
+  // Don't load from localStorage — use the in-memory array (populated by sbLoadAllData for real users)
+  if (!isGuest) { /* vehicles already in memory */ } else { vehicles = load('vehicles', []); }
   var el = document.getElementById('vehicleContent');
   if (!el) return;
 
@@ -5473,12 +5478,13 @@ function deleteVehicle(id) {
 // ══════════════════════════════════════════════════════════════════════════
 // NOTES FEATURE
 // ══════════════════════════════════════════════════════════════════════════
-var notes = load('notes', []);
-var nextNoteId = notes.length + 1;
+var notes = [];
+var nextNoteId = 1;
 var _noteColour = 'default';
 
 function renderNotes() {
-  notes = load('notes', []);
+  // Don't load from localStorage — use in-memory array for real users
+  if (!isGuest) { /* notes already in memory */ } else { notes = load('notes', []); }
   var el = document.getElementById('notesContent');
   if (!el) return;
 
