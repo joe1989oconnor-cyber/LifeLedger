@@ -1984,28 +1984,25 @@ function logClick(provId, src) {
     return;
   }
 
-  // ── Fire Awin tracking pixel ─────────────────────────────────────────────
-  if (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinId) {
-    try {
-      var pixel = new Image();
-      var clickRef = 'LL-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-      pixel.src = 'https://www.awin1.com/sread.php'
-        + '?awinmid=' + provider.awinId
-        + '&awinaffid=' + AWIN_PUBLISHER_ID
-        + '&clickref=' + clickRef
-        + '&p=' + encodeURIComponent(provider.url);
-      console.log('[Awin] Pixel fired for', provider.name, 'clickref:', clickRef);
-    } catch(e) {
-      console.error('[Awin] Pixel error:', e);
-    }
-  } else {
-    console.log('[Awin] Publisher ID not set — tracking not active');
-  }
+  // ── Build destination URL ────────────────────────────────────────────────
+  var clickRef = 'LL-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+  var destUrl;
 
-  // ── Open affiliate or direct URL ─────────────────────────────────────────
-  var destUrl = (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinUrl)
-    ? provider.awinUrl.replace('AWIN_PUBLISHER_ID', AWIN_PUBLISHER_ID)
-    : provider.url;
+  if (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinId) {
+    // Use Awin click tracking URL — this handles tracking AND redirect in one request
+    destUrl = 'https://www.awin1.com/cread.php'
+      + '?awinmid=' + provider.awinId
+      + '&awinaffid=' + AWIN_PUBLISHER_ID
+      + '&clickref=' + clickRef
+      + '&p=' + encodeURIComponent(provider.awinUrl
+          ? provider.awinUrl.replace('AWIN_PUBLISHER_ID', AWIN_PUBLISHER_ID).split('&ued=')[1]
+          : provider.url);
+    console.log('[Awin] Tracking click for', provider.name, 'ref:', clickRef);
+  } else {
+    // No Awin — go direct
+    destUrl = provider.url;
+    console.log('[No Awin] Direct link for', provider.name);
+  }
 
   window.open(destUrl, '_blank', 'noopener');
 }
@@ -2703,7 +2700,7 @@ function cmpRowV2(r,curAmt,curProv){
     +'<div style="text-align:right;flex-shrink:0">'
     +'<div class="cmp-price" style="color:'+(hasSaving?'var(--green)':'var(--slate)')+'">\u00a3'+r.price.toFixed(2)+'/mo</div>'
     +(isCurrent?'<span style="font-size:11px;color:var(--slate-3)">current plan</span>'
-      :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="'+r.url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'compare\')">'
+      :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="#" onclick="logClick(\''+r.id+'\',\'compare\');return false;">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch &amp; save \u00a3'+saving+'/mo'
         :'<i class="ti ti-arrow-right"></i> View deal')
       +'</a>')
