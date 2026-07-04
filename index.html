@@ -4728,15 +4728,16 @@ function sbLoadAllData(callback) {
   if (!token) { if(callback) callback(); return; }
 
   // Wipe ALL localStorage stale data before loading fresh from Supabase
-  var _keepKeys = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+  var _keepKeys = ['ll_sb_token','ll_sb_refresh','ll_dark','ll_last_user_id'];
   try {
     Object.keys(localStorage).forEach(function(k) {
       if (_keepKeys.indexOf(k) < 0) { try{localStorage.removeItem(k);}catch(e){} }
     });
   } catch(e) {}
-  // Reset all arrays
+  // Reset all in-memory data including move addresses
   bills=[]; inventory=[]; docs=[]; members=[]; notes=[]; vehicles=[];
   properties=[]; tenants=[];
+  moveFrom=''; moveTo=''; moveDate='';
   budgets={'Gas':0,'Electricity':0,'Water':0,'Internet & Broadband':0,'TV & Streaming':0,'Home Insurance':0,'Car Insurance':0,'Mortgage / Rent':0,'Council Tax':0,'Other':0};
 
   var tables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants', 'vehicles', 'notes'];
@@ -5035,6 +5036,9 @@ function saveMoveSetup() {
   save('moveFrom', from);
   save('moveTo', to);
   save('moveDate', date);
+  // Tag with current user so it doesn't bleed to other accounts
+  var _uid = load('last_user_id', '');
+  if (_uid) save('move_user_id', _uid);
   closeModal('moveSetupModal');
   renderMoveHeader();
   // Update address hub templates with new addresses
@@ -5045,9 +5049,19 @@ function saveMoveSetup() {
 }
 
 function renderMoveHeader() {
-  moveFrom = load('moveFrom', '');
-  moveTo = load('moveTo', '');
-  moveDate = load('moveDate', '');
+  // Only load move address if it belongs to the current user
+  var _savedMoveUid = load('move_user_id', '');
+  var _currentUid = load('last_user_id', '');
+  if (!isGuest && _savedMoveUid && _currentUid && _savedMoveUid !== _currentUid) {
+    // Different user — clear the move address
+    moveFrom = ''; moveTo = ''; moveDate = '';
+    try { localStorage.removeItem('ll_moveFrom'); localStorage.removeItem('ll_moveTo');
+          localStorage.removeItem('ll_moveDate'); localStorage.removeItem('ll_move_user_id'); } catch(e) {}
+  } else {
+    moveFrom = load('moveFrom', '');
+    moveTo = load('moveTo', '');
+    moveDate = load('moveDate', '');
+  }
 
   var prompt = document.getElementById('moveSetupPrompt');
   var details = document.getElementById('moveDetails');
