@@ -2156,18 +2156,35 @@ function billRow(b,mini){
 // ── LIVE RATES (Anthropic API for real pricing data) ──────────────────────
 var liveRates=[];var ratesFetched=false;var ratesFetching=false;
 var RATE_PROVIDERS=[
-  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy',sponsored:true,
-    awinId:'23370',awinUrl:'https://www.awin1.com/cread.php?awinmid=23370&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Foctopus.energy%2F'},
-  {id:'eon',name:'E.ON Next',cat:'energy',logo:'🔆',logoBg:'var(--amber-l)',logoFg:'var(--amber)',url:'https://www.eonenergy.com',sponsored:false,
+  // ── Energy ─────────────────────────────────────────────────────────────
+  {id:'eon',name:'E.ON Next',cat:'energy',logo:'🔆',logoBg:'var(--amber-l)',logoFg:'var(--amber)',url:'https://www.eonnext.com',sponsored:false,
     awinId:'19568',awinUrl:'https://www.awin1.com/cread.php?awinmid=19568&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.eonnext.com%2F'},
-  {id:'communityfibre',name:'Community Fibre',cat:'broadband',logo:'📡',logoBg:'var(--teal-xl)',logoFg:'var(--teal)',url:'https://www.communityfibre.co.uk',sponsored:true,
-    awinId:'22468',awinUrl:'https://www.awin1.com/cread.php?awinmid=22468&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.communityfibre.co.uk%2F'},
+  {id:'msm-energy',name:'MoneySupermarket Energy',cat:'energy',logo:'💡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://www.moneysupermarket.com/gas-and-electricity/',sponsored:true,
+    awinId:'6090',awinUrl:'https://www.awin1.com/cread.php?awinmid=6090&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.moneysupermarket.com%2Fgas-and-electricity%2F'},
+
+  // ── Broadband & Mobile ─────────────────────────────────────────────────
+  {id:'virgin',name:'Virgin Media',cat:'broadband',logo:'📡',logoBg:'var(--red-m)',logoFg:'var(--red)',url:'https://www.virginmedia.com',sponsored:true,
+    awinId:'5728',awinUrl:'https://www.awin1.com/cread.php?awinmid=5728&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.virginmedia.com%2F'},
   {id:'bt',name:'BT Full Fibre',cat:'broadband',logo:'🌐',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.bt.com',sponsored:false,
     awinId:'5271',awinUrl:'https://www.awin1.com/cread.php?awinmid=5271&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.bt.com%2F'},
+  {id:'communityfibre',name:'Community Fibre',cat:'broadband',logo:'📶',logoBg:'var(--teal-xl)',logoFg:'var(--teal)',url:'https://www.communityfibre.co.uk',sponsored:false,
+    awinId:'22468',awinUrl:'https://www.awin1.com/cread.php?awinmid=22468&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.communityfibre.co.uk%2F'},
+  {id:'vodafone',name:'Vodafone',cat:'broadband',logo:'📱',logoBg:'var(--red-m)',logoFg:'var(--red)',url:'https://www.vodafone.co.uk',sponsored:false,
+    awinId:'9956',awinUrl:'https://www.awin1.com/cread.php?awinmid=9956&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.vodafone.co.uk%2F'},
+  {id:'ee',name:'EE',cat:'broadband',logo:'📲',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://ee.co.uk',sponsored:false,
+    awinId:'14234',awinUrl:'https://www.awin1.com/cread.php?awinmid=14234&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fee.co.uk%2F'},
+
+  // ── Insurance ──────────────────────────────────────────────────────────
   {id:'lv',name:'LV= Insurance',cat:'insurance',logo:'🛡️',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.lv.com',sponsored:true,
     awinId:'8142',awinUrl:'https://www.awin1.com/cread.php?awinmid=8142&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.lv.com%2F'},
-  {id:'admiral',name:'Admiral',cat:'insurance',logo:'⚓',logoBg:'var(--red-m)',logoFg:'var(--red)',url:'https://www.admiral.com',sponsored:false,
-    awinId:'7072',awinUrl:'https://www.awin1.com/cread.php?awinmid=7072&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.admiral.com%2F'}
+  {id:'msm-insurance',name:'MoneySupermarket Insurance',cat:'insurance',logo:'🔒',logoBg:'var(--purple-m)',logoFg:'var(--purple)',url:'https://www.moneysupermarket.com/home-insurance/',sponsored:false,
+    awinId:'6090',awinUrl:'https://www.awin1.com/cread.php?awinmid=6090&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.moneysupermarket.com%2Fhome-insurance%2F'},
+  {id:'gocompare-car',name:'Go.Compare Car Insurance',cat:'insurance',logo:'🚗',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.gocompare.com/car-insurance/',sponsored:false,
+    awinId:'3803',awinUrl:'https://www.awin1.com/cread.php?awinmid=3803&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.gocompare.com%2Fcar-insurance%2F'},
+  {id:'gocompare-home',name:'Go.Compare Home Insurance',cat:'insurance',logo:'🏠',logoBg:'var(--blue-m)',logoFg:'var(--blue)',url:'https://www.gocompare.com/home-insurance/',sponsored:false,
+    awinId:'3803',awinUrl:'https://www.awin1.com/cread.php?awinmid=3803&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.gocompare.com%2Fhome-insurance%2F'},
+  {id:'gocompare-van',name:'Go.Compare Van Insurance',cat:'insurance',logo:'🚐',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://www.gocompare.com/van-insurance/',sponsored:false,
+    awinId:'3803',awinUrl:'https://www.awin1.com/cread.php?awinmid=3803&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.gocompare.com%2Fvan-insurance%2F'}
 ];
 
 // ── Awin Configuration ─────────────────────────────────────────────────────
