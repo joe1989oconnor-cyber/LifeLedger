@@ -3094,7 +3094,7 @@ function renderBudget(){
   var alerts=document.getElementById('overspendAlerts');
   if(!bars)return;
 
-  var exampleMode=!bills.length;
+  var exampleMode=isGuest&&!bills.length;
 
   // Calculate spend per category from bills (or show examples)
   // Ensure all standard categories exist
@@ -3104,10 +3104,16 @@ function renderBudget(){
   var spend={};
   cats.forEach(function(cat){spend[cat]=0;});
   if(exampleMode){
-    // Show illustrative example data so the page isn't blank
+    // Show illustrative example data for demo/guest mode only
     spend={'Mortgage / Rent':1100,'Gas':87,'Electricity':64,'Water':45,
       'Internet & Broadband':52,'TV & Streaming':37,'Home Insurance':50,
       'Car Insurance':80,'Council Tax':170,'Other':60};
+    // Also show example budget limits for demo
+    if(!Object.values(budgets).some(function(v){return v>0;})){
+      budgets={'Mortgage / Rent':1100,'Gas':100,'Electricity':80,'Water':50,
+        'Internet & Broadband':60,'TV & Streaming':50,'Home Insurance':50,
+        'Car Insurance':80,'Council Tax':170,'Other':150};
+    }
   } else {
     bills.forEach(function(b){
       var mn=parseFloat(b.amt)||0;
