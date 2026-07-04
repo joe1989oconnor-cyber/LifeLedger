@@ -17,43 +17,56 @@ module.exports = async function handler(req, res) {
   try {
     if (action === 'signup') {
       const authRes = await sb('/auth/v1/signup', 'POST', { email, password });
+      console.log('[Auth] Signup response keys:', Object.keys(authRes));
+
       if (authRes.error) return res.status(400).json({ error: authRes.error.message || 'Signup failed' });
 
-      // When email confirmation is ON, Supabase returns user at top level not authRes.user
-      const userId = authRes.user?.id || authRes.id;
-      const confirmed = authRes.user?.confirmed_at || authRes.confirmed_at;
+      // Extract user ID from wherever Supabase puts it
+      const userId = authRes.user?.id || authRes.id || null;
       const accessToken = authRes.access_token || null;
 
-      if (!userId) {
-        // Supabase returned nothing — likely duplicate email
-        return res.status(400).json({ error: 'An account with this email may already exist. Please sign in.' });
-      }
+      // When email confirmation is ON and it's a NEW user:
+      // Supabase returns { user: { id, email, ... }, session: null }
+      // When confirmation is OFF: returns { user: {...}, session: { access_token, ... } }
+      // When email already exists + confirmation ON: returns same empty-session response (by design)
 
-      // Try to create profile (may already exist if re-registering)
-      try {
-        await sb('/rest/v1/profiles', 'POST', {
-          id: userId, name: name || email.split('@')[0], email, mode: mode || 'individual'
-        }, null, true);
-      } catch(e) {
-        console.log('[Auth] Profile may already exist:', e.message);
-      }
+      // If we have a userId, create the profile and return success
+      if (userId) {
+        try {
+          await sb('/rest/v1/profiles', 'POST', {
+            id: userId, name: name || email.split('@')[0], email, mode: mode || 'individual'
+          }, null, true);
+        } catch(e) {
+          console.log('[Auth] Profile insert note:', e.message);
+        }
 
-      // If email confirmation is required (no access token returned)
-      if (!accessToken) {
+        if (!accessToken) {
+          // Email confirmation required — tell frontend to show check email screen
+          return res.status(200).json({
+            success: true,
+            requiresConfirmation: true,
+            user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual' }
+          });
+        }
+
+        // No confirmation required — sign straight in
         return res.status(200).json({
           success: true,
-          requiresConfirmation: true,
-          user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual' }
+          requiresConfirmation: false,
+          user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual', is_pro: false },
+          access_token: accessToken,
+          refresh_token: authRes.refresh_token
         });
       }
 
-      // Email confirmation disabled — sign straight in
+      // No userId at all — this happens when Supabase returns an empty object
+      // This is Supabase's security behaviour when confirmation is on
+      // Treat as: confirmation email sent (we can't distinguish new vs existing)
+      console.log('[Auth] No userId in response — treating as confirmation required');
       return res.status(200).json({
         success: true,
-        requiresConfirmation: false,
-        user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual', is_pro: false },
-        access_token: accessToken,
-        refresh_token: authRes.refresh_token
+        requiresConfirmation: true,
+        user: { email, name: name || email.split('@')[0], mode: mode || 'individual' }
       });
     }
 
