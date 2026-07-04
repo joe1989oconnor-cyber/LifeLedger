@@ -4981,12 +4981,19 @@ window.addEventListener('load',function(){
   if (isVercelEnv()) {
     var token = load('sb_token', null);
     if (token) {
+      // Safety timeout — if sbRestore hangs, show landing after 4 seconds
+      var _restoreTimeout = setTimeout(function() {
+        console.warn('[Load] Session restore timed out — showing landing');
+        hideLoader();
+        showScreen('landing');
+      }, 4000);
+
       sbRestore(function(restored, user) {
+        clearTimeout(_restoreTimeout);
         hideLoader();
         if (restored && user) {
           enterApp(user.name, user.email, false);
         } else {
-          // Token invalid — clear it and show landing
           try{localStorage.removeItem('ll_sb_token');localStorage.removeItem('ll_sb_refresh');}catch(e){}
           showScreen('landing');
         }
