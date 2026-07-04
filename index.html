@@ -2884,13 +2884,17 @@ function cmpRowV2(r,curAmt,curProv){
   var saving=Math.round(curAmt-r.price);
   var hasSaving=saving>0&&!isCurrent;
   var sponsored=r.sponsored||false;
+  // Safe logo fallback — use first letter of provider name if no emoji
+  var logo=r.logo||(r.name?r.name.charAt(0).toUpperCase():'?');
+  var logoBg=r.logoBg||'var(--slate-7)';
+  var logoFg=r.logoFg||'var(--slate-3)';
   var switchBtn=isCurrent
     ?'<span style="font-size:11px;color:var(--slate-3);font-weight:600">Current plan</span>'
     :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="#" onclick="logClick(\''+r.id+'\',\'compare\');return false;">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch &amp; save £'+saving+'/mo':'<i class="ti ti-arrow-right"></i> View deal')
       +'</a>';
   return '<div class="cmp-item" style="'+(isCurrent?'background:var(--slate-8)':'')+'">'
-    +'<div class="rate-logo" style="background:'+(r.logoBg||'var(--slate-7)')+';color:'+(r.logoFg||'var(--slate-3)')+'">'+r.logo+'</div>'
+    +'<div class="rate-logo" style="background:'+logoBg+';color:'+logoFg+';font-size:'+(logo.length===1?'15px':'20px')+'">'+logo+'</div>'
     +'<div class="cmp-info">'
       +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'
         +'<span class="cmp-name">'+r.name+'</span>'
