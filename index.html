@@ -3162,7 +3162,14 @@ function renderBudget(){
   var editBtnHtml='<div style="text-align:right;margin-bottom:10px">'
     +'<button class="btn-switch" onclick="openModal(\'budgetModal\')" style="white-space:nowrap">'
     +'<i class="ti ti-edit"></i> Edit Budgets</button></div>';
-  bars.innerHTML=editBtnHtml+(barsHtml||'<div style="color:var(--slate-3);font-size:13px;padding:10px">No spending data yet.</div>');
+  var allZero = Object.keys(budgets).every(function(k){ return !budgets[k] || parseFloat(budgets[k]) === 0; });
+  var emptyBudgetHtml = '<div style="padding:30px 20px;text-align:center">'
+    + '<div style="font-size:36px;margin-bottom:10px">📊</div>'
+    + '<div style="font-size:14px;font-weight:700;color:var(--slate);margin-bottom:6px">No budget limits set</div>'
+    + '<div style="font-size:12.5px;color:var(--slate-3);margin-bottom:16px">Set monthly limits to track spending against your budget</div>'
+    + '<button class="btn-save" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px" onclick="openModal(\'budgetModal\')"><i class="ti ti-edit"></i> Set budget limits</button>'
+    + '</div>';
+  bars.innerHTML=editBtnHtml+(barsHtml||(allZero ? emptyBudgetHtml : '<div style="color:var(--slate-3);font-size:13px;padding:10px">No spending data yet.</div>'));
 
   // Summary totals
   var pct2=totalBudget>0?Math.min(100,Math.round(totalSpend/totalBudget*100)):0;
@@ -4748,8 +4755,15 @@ function sbLoadAllData(callback) {
           nextBillId = bills.length + 1;
         }
         if (table === 'budgets') {
-          budgets = {};
-          res.data.forEach(function(b) { budgets[b.category] = b.amount; });
+          // Reset to zero first — only populate from Supabase if rows exist
+          budgets = {'Gas':0,'Electricity':0,'Water':0,'Internet & Broadband':0,
+            'TV & Streaming':0,'Home Insurance':0,'Car Insurance':0,
+            'Mortgage / Rent':0,'Council Tax':0,'Other':0};
+          if (res.data && res.data.length) {
+            res.data.forEach(function(b) {
+              if (b.category) budgets[b.category] = parseFloat(b.amount) || 0;
+            });
+          }
         }
         if (table === 'inventory') {
           var _em={'Electronics':'📺','Furniture':'🛋️','Appliances':'🔌','Clothing':'👕','Jewellery':'💎','Tools':'🔨','Art / Collectibles':'🆨️','Other':'📦'};
@@ -6378,16 +6392,27 @@ function saveBudgets(){
     // Already updated via oninput handlers
   });
   save('budgets',budgets);
-  // Sync budgets to Supabase — save each category as a row
+  // Sync budgets to Supabase — delete all then re-insert clean
   (function(){
     var _tok=sbToken||load('sb_token',null);
     if(!_tok||isGuest)return;
-    // Delete existing and re-insert all (simplest approach for budgets object)
-    Object.keys(budgets).forEach(function(cat){
-      fetch('/api/supabase/data?table=budgets',{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_tok},
-        body:JSON.stringify({category:cat,amount:parseFloat(budgets[cat])||0})})
-      .catch(function(e){console.error('[Supabase] Budget error:',e);});
+    // First delete all existing budget rows for this user
+    fetch('/api/supabase/data?table=budgets&deleteAll=1',{
+      method:'DELETE',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_tok}
+    })
+    .catch(function(){})
+    .finally(function(){
+      // Then insert fresh rows for each non-zero category
+      Object.keys(budgets).forEach(function(cat){
+        var amt = parseFloat(budgets[cat]) || 0;
+        if (amt > 0) {
+          fetch('/api/supabase/data?table=budgets',{method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+_tok},
+            body:JSON.stringify({category:cat,amount:amt})})
+          .catch(function(e){console.error('[Supabase] Budget error:',e);});
+        }
+      });
     });
   })();
   closeModal('budgetModal');
