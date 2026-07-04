@@ -1531,8 +1531,8 @@ footer a:hover{color:var(--teal);}
 <div class="page" id="page-inventory">
   <div class="page-head"><div class="ph-left"><div class="page-title">Room Inventory</div><div class="page-sub">Room-by-room log &mdash; values, condition &amp; insurance export</div></div><div class="page-actions"><button class="btn-xs bxs-gray" onclick="exportInventory()"><i class="ti ti-download"></i> Export CSV</button><button class="btn-add" onclick="openAddItem()"><i class="ti ti-plus"></i> Add Item</button></div></div>
   <div style="background:linear-gradient(135deg,var(--blue-l),var(--indigo-l));border:1px solid rgba(99,102,241,.16);border-radius:var(--r-lg);padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div><div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--indigo);margin-bottom:3px">Total insurable value</div><div style="font-size:28px;font-weight:800;letter-spacing:-.5px" id="invTotal">&pound;24,350</div></div>
-    <div style="display:flex;gap:9px"><div style="background:var(--white);border-radius:9px;padding:9px 15px;text-align:center;box-shadow:var(--sh)"><div style="font-size:19px;font-weight:800" id="invCount">46</div><div style="font-size:10px;color:var(--slate-3)">Items</div></div><div style="background:var(--white);border-radius:9px;padding:9px 15px;text-align:center;box-shadow:var(--sh)"><div style="font-size:19px;font-weight:800" id="invRooms">6</div><div style="font-size:10px;color:var(--slate-3)">Rooms</div></div></div>
+    <div><div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--indigo);margin-bottom:3px">Total insurable value</div><div style="font-size:28px;font-weight:800;letter-spacing:-.5px" id="invTotal">£0</div></div>
+    <div style="display:flex;gap:9px"><div style="background:var(--white);border-radius:9px;padding:9px 15px;text-align:center;box-shadow:var(--sh)"><div style="font-size:19px;font-weight:800" id="invCount">0</div><div style="font-size:10px;color:var(--slate-3)">Items</div></div><div style="background:var(--white);border-radius:9px;padding:9px 15px;text-align:center;box-shadow:var(--sh)"><div style="font-size:19px;font-weight:800" id="invRooms">0</div><div style="font-size:10px;color:var(--slate-3)">Rooms</div></div></div>
   </div>
   <div class="room-tabs" id="roomTabs"></div>
   <div class="inv-grid" id="invGrid"></div>
@@ -2068,6 +2068,8 @@ function initBlank(){
    'comp','income','propInv','xp','pro','moveDone'].forEach(function(k){
     try{localStorage.removeItem('ll_'+k);}catch(e){}
   });
+  vehicles=[];save('vehicles',[]);
+  notes=[];save('notes',[]);
 }
 
 // ── MODE ───────────────────────────────────────────────────────────────────
@@ -4692,6 +4694,12 @@ function sbSignOut() {
 function sbLoadAllData(callback) {
   var token = sbToken || load('sb_token', null);
   if (!token) { if(callback) callback(); return; }
+
+  // Clear ALL data before loading fresh from Supabase
+  bills=[]; inventory=[]; docs=[]; members=[]; notes=[]; vehicles=[];
+  properties=[]; tenants=[];
+  budgets={'Gas':0,'Electricity':0,'Water':0,'Internet & Broadband':0,'TV & Streaming':0,'Home Insurance':0,'Car Insurance':0,'Mortgage / Rent':0,'Council Tax':0,'Other':0};
+  try{['moveFrom','moveTo','moveDate'].forEach(function(k){localStorage.removeItem('ll_'+k);});}catch(e){}
 
   var tables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants', 'vehicles', 'notes'];
   var loaded = 0;
