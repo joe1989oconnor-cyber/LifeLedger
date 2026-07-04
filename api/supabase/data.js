@@ -1,7 +1,4 @@
 // api/supabase/data.js
-// Handles all data operations — bills, budgets, inventory, docs
-// Called by the frontend to load and save user data
-
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -12,7 +9,6 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Get user from token
   const token = (req.headers.authorization || '').replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
@@ -20,26 +16,23 @@ module.exports = async function handler(req, res) {
   if (!userRes.id) return res.status(401).json({ error: 'Invalid token' });
   const userId = userRes.id;
 
-  const { table, id } = req.query;
+  const { table, id, deleteAll } = req.query;
   const validTables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants', 'vehicles', 'notes'];
   if (!validTables.includes(table)) return res.status(400).json({ error: 'Invalid table: ' + table });
 
   try {
-    // GET — load all rows for this user
     if (req.method === 'GET') {
       const rows = await sb(`/rest/v1/${table}?user_id=eq.${userId}&order=created_at.asc`, 'GET', null, null, true);
       return res.status(200).json({ data: Array.isArray(rows) ? rows : [] });
     }
 
-    // POST — create new row
     if (req.method === 'POST') {
       const body = { ...req.body, user_id: userId };
-      delete body.id; // Let Supabase generate the ID
+      delete body.id;
       const row = await sb(`/rest/v1/${table}`, 'POST', body, null, true);
       return res.status(201).json({ data: Array.isArray(row) ? row[0] : row });
     }
 
-    // PUT — update existing row
     if (req.method === 'PUT') {
       if (!id) return res.status(400).json({ error: 'ID required for update' });
       const body = { ...req.body, user_id: userId };
@@ -48,8 +41,12 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ data: Array.isArray(row) ? row[0] : row });
     }
 
-    // DELETE — remove row
     if (req.method === 'DELETE') {
+      // deleteAll=1 means delete all rows for this user in this table (used for budgets)
+      if (deleteAll === '1') {
+        await sb(`/rest/v1/${table}?user_id=eq.${userId}`, 'DELETE', null, null, true);
+        return res.status(200).json({ success: true });
+      }
       if (!id) return res.status(400).json({ error: 'ID required for delete' });
       await sb(`/rest/v1/${table}?id=eq.${id}&user_id=eq.${userId}`, 'DELETE', null, null, true);
       return res.status(200).json({ success: true });
