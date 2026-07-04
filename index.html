@@ -2056,24 +2056,27 @@ function createAccount(){
 }
 
 function initBlank(){
+  // Wipe ALL localStorage except auth tokens and dark mode preference
+  var keepKeys = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+  var darkPref = load('dark', false);
+  try {
+    var keys = Object.keys(localStorage);
+    keys.forEach(function(k) {
+      if (keepKeys.indexOf(k) < 0) {
+        try { localStorage.removeItem(k); } catch(e) {}
+      }
+    });
+  } catch(e) {}
+
+  // Reset all in-memory arrays and values
   bills=[];
   budgets={'Gas':0,'Electricity':0,'Water':0,'Internet & Broadband':0,'TV & Streaming':0,'Home Insurance':0,'Car Insurance':0,'Mortgage / Rent':0,'Council Tax':0,'Other':0};
-  docs=[];inventory=[];members=[];
+  docs=[];inventory=[];members=[];vehicles=[];notes=[];
   achievements=defAchievements();
   properties=[];tenants=[];maintenance=[];compliance=[];income=[];propInventories={};
-  xpPoints=0;isPro=false;isDark=load('dark',false);
-  moveDone=[];nextBillId=1;nextDocId=1;nextItemId=1;
+  xpPoints=0;isPro=false;isDark=darkPref;
+  moveDone=[];nextBillId=1;nextDocId=1;nextItemId=1;nextVehicleId=1;nextNoteId=1;
   var t=new Date();calY=t.getFullYear();calM=t.getMonth();
-  ['bills','budgets','docs','inventory','members','props','tenants','maint',
-   'comp','income','propInv','xp','pro','moveDone'].forEach(function(k){
-    try{localStorage.removeItem('ll_'+k);}catch(e){}
-  });
-  vehicles=[];notes=[];
-  ['bills','budgets','docs','inventory','members','props','tenants','maint',
-   'comp','income','propInv','xp','pro','moveDone','vehicles','notes',
-   'moveFrom','moveTo','moveDate'].forEach(function(k){
-    try{localStorage.removeItem('ll_'+k);}catch(e){}
-  });
 }
 
 // ── MODE ───────────────────────────────────────────────────────────────────
@@ -4699,11 +4702,17 @@ function sbLoadAllData(callback) {
   var token = sbToken || load('sb_token', null);
   if (!token) { if(callback) callback(); return; }
 
-  // Clear ALL data before loading fresh from Supabase
+  // Wipe ALL localStorage stale data before loading fresh from Supabase
+  var _keepKeys = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+  try {
+    Object.keys(localStorage).forEach(function(k) {
+      if (_keepKeys.indexOf(k) < 0) { try{localStorage.removeItem(k);}catch(e){} }
+    });
+  } catch(e) {}
+  // Reset all arrays
   bills=[]; inventory=[]; docs=[]; members=[]; notes=[]; vehicles=[];
   properties=[]; tenants=[];
   budgets={'Gas':0,'Electricity':0,'Water':0,'Internet & Broadband':0,'TV & Streaming':0,'Home Insurance':0,'Car Insurance':0,'Mortgage / Rent':0,'Council Tax':0,'Other':0};
-  try{['moveFrom','moveTo','moveDate'].forEach(function(k){localStorage.removeItem('ll_'+k);});}catch(e){}
 
   var tables = ['bills', 'budgets', 'inventory', 'docs', 'members', 'properties', 'tenants', 'vehicles', 'notes'];
   var loaded = 0;
