@@ -4670,6 +4670,18 @@ function sbSignIn(email, password) {
     save('sb_refresh', data.refresh_token);
     currentMode = data.user.mode || 'individual';
     isGuest = false;
+    // Check if this is a different user than before — if so wipe localStorage
+    var lastUserId = load('last_user_id', '');
+    if (lastUserId && lastUserId !== data.user.id) {
+      console.log('[Auth] Different user detected — wiping localStorage');
+      var keepKeys = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+      try {
+        Object.keys(localStorage).forEach(function(k) {
+          if (keepKeys.indexOf(k) < 0) { try{localStorage.removeItem(k);}catch(e){} }
+        });
+      } catch(e) {}
+    }
+    save('last_user_id', data.user.id);
     // Load user data from Supabase
     sbLoadAllData(function() {
       enterApp(data.user.name, data.user.email, false);
@@ -5780,6 +5792,18 @@ window.addEventListener('load',function(){
         clearTimeout(_restoreTimeout);
         hideLoader();
         if (restored && user) {
+          // Check if different user — wipe localStorage if so
+          var _lastUid = load('last_user_id', '');
+          if (_lastUid && _lastUid !== user.id) {
+            console.log('[Restore] Different user — wiping localStorage');
+            var _keep = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+            try {
+              Object.keys(localStorage).forEach(function(k) {
+                if (_keep.indexOf(k) < 0) { try{localStorage.removeItem(k);}catch(e){} }
+              });
+            } catch(e) {}
+          }
+          save('last_user_id', user.id);
           enterApp(user.name, user.email, false);
         } else {
           try{localStorage.removeItem('ll_sb_token');localStorage.removeItem('ll_sb_refresh');}catch(e){}
