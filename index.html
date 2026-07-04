@@ -1077,7 +1077,7 @@ footer a:hover{color:var(--teal);}
 </style>
 </head>
 <body>
-<div id="screen-loading" style="position:fixed;inset:0;background:var(--white,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
+<div id="screen-loading" style="position:fixed;inset:0;background:var(--white,#fff);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
   <div style="width:42px;height:42px;border-radius:10px;background:#0d9488;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
     <svg viewBox="0 0 24 24" fill="none" width="24" height="24"><path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z" fill="white" fill-opacity="0.92"/></svg>
   </div>
@@ -2886,7 +2886,7 @@ function cmpRowV2(r,curAmt,curProv){
   var sponsored=r.sponsored||false;
   var switchBtn=isCurrent
     ?'<span style="font-size:11px;color:var(--slate-3);font-weight:600">Current plan</span>'
-    :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="#" onclick="logClick(''+r.id+'','compare');return false;">'
+    :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="#" onclick="logClick(\''+r.id+'\',\'compare\');return false;">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch &amp; save £'+saving+'/mo':'<i class="ti ti-arrow-right"></i> View deal')
       +'</a>';
   return '<div class="cmp-item" style="'+(isCurrent?'background:var(--slate-8)':'')+'">'
@@ -4973,6 +4973,10 @@ window.addEventListener('load',function(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='none';
   }
+  function showLoader(){
+    var el=document.getElementById('screen-loading');
+    if(el)el.style.display='flex';
+  }
   // Check for Google OAuth hash token first
   if (window.location.hash && window.location.hash.indexOf('access_token') >= 0) {
     hideLoader(); // checkAuthCallback IIFE handles this
@@ -4981,6 +4985,8 @@ window.addEventListener('load',function(){
   if (isVercelEnv()) {
     var token = load('sb_token', null);
     if (token) {
+      // Show loader while restoring session
+      showLoader();
       // Safety timeout — if sbRestore hangs, show landing after 4 seconds
       var _restoreTimeout = setTimeout(function() {
         console.warn('[Load] Session restore timed out — showing landing');
