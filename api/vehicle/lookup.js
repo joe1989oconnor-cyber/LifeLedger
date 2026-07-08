@@ -39,31 +39,72 @@ module.exports = async function handler(req, res) {
       DVSA_SCOPE_URL: scopeUrl ? 'set' : 'MISSING'
     });
 
+    // Result object — populated by whichever APIs are available, then merged
+    const result = {
+      registration: reg,
+      make: '', model: '', colour: '', fuelType: '', engineSize: '', year: '',
+      motStatus: '', motExpiry: '', taxStatus: '', taxDue: '',
+      motHistory: [],
+      source: 'manual'
+    };
+    let gotData = false;
+
+    // ── DVLA VES API — vehicle details + tax status/due date ──────────────
+    const dvlaKey = process.env.DVLA_API_KEY;
+    if (dvlaKey) {
+      try {
+        const r = await fetch('https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': dvlaKey },
+          body: JSON.stringify({ registrationNumber: reg })
+        });
+        if (r.ok) {
+          const d = await r.json();
+          result.make = d.make || result.make;
+          result.colour = d.colour || result.colour;
+          result.fuelType = d.fuelType || result.fuelType;
+          result.engineSize = d.engineCapacity ? d.engineCapacity + 'cc' : result.engineSize;
+          result.year = d.yearOfManufacture ? String(d.yearOfManufacture) : result.year;
+          result.motStatus = d.motStatus || result.motStatus;
+          result.motExpiry = d.motExpiryDate || result.motExpiry;
+          result.taxStatus = d.taxStatus || result.taxStatus;
+          result.taxDue = d.taxDueDate || result.taxDue;
+          result.source = 'dvla';
+          gotData = true;
+          console.log('[DVLA] Vehicle + tax data retrieved');
+        } else {
+          console.error('[DVLA] API error:', r.status, await r.text());
+        }
+      } catch (e) {
+        console.error('[DVLA] Fetch error:', e.message);
+      }
+    }
+
+    // ── DVSA MOT History API — make/model + full MOT history ──────────────
     if (dvsaKey && clientId && clientSecret && tokenUrl) {
       const token = await getDvsaToken(clientId, clientSecret, tokenUrl, scopeUrl);
       if (token) {
-        const r = await fetch(`https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`, {
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'X-API-Key': dvsaKey,
-            'Accept': 'application/json'
-          }
-        });
-
-        if (r.ok) {
-          const d = await r.json();
-          const tests = d.motTests || [];
-          const latest = tests[0] || {};
-          return res.status(200).json({
-            registration: reg,
-            make: d.make || '',
-            model: d.model || '',
-            colour: d.primaryColour || '',
-            fuelType: d.fuelType || '',
-            year: d.firstUsedDate ? d.firstUsedDate.slice(0, 4) : (d.manufactureDate ? d.manufactureDate.slice(0,4) : ''),
-            motStatus: latest.testResult || '',
-            motExpiry: latest.expiryDate || '',
-            motHistory: tests.slice(0, 5).map(t => ({
+        try {
+          const r = await fetch(`https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg}`, {
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'X-API-Key': dvsaKey,
+              'Accept': 'application/json'
+            }
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const tests = d.motTests || [];
+            const latest = tests[0] || {};
+            // DVSA fills any gaps DVLA didn't cover, and always provides MOT history + model
+            result.make = result.make || d.make || '';
+            result.model = d.model || result.model;
+            result.colour = result.colour || d.primaryColour || '';
+            result.fuelType = result.fuelType || d.fuelType || '';
+            result.year = result.year || (d.firstUsedDate ? d.firstUsedDate.slice(0, 4) : (d.manufactureDate ? d.manufactureDate.slice(0, 4) : ''));
+            result.motStatus = result.motStatus || latest.testResult || '';
+            result.motExpiry = result.motExpiry || latest.expiryDate || '';
+            result.motHistory = tests.slice(0, 5).map(t => ({
               date: t.completedDate,
               result: t.testResult,
               mileage: t.odometerValue,
@@ -71,59 +112,27 @@ module.exports = async function handler(req, res) {
               advisories: (t.defects || t.rfrAndComments || [])
                 .filter(x => x.type === 'ADVISORY' || x.type === 'MINOR')
                 .map(x => x.text).slice(0, 3)
-            })),
-            source: 'dvsa'
-          });
-        } else {
-          const errText = await r.text();
-          console.error('[DVSA] API error:', r.status, errText);
-          if (r.status === 404) {
-            return res.status(200).json({
-              registration: reg, make: '', model: '', colour: '', fuelType: '', year: '',
-              motStatus: '', motExpiry: '', motHistory: [],
-              source: 'manual',
-              message: 'No MOT records found for this registration — enter details manually'
-            });
+            }));
+            if (result.source !== 'dvla') result.source = 'dvsa';
+            else result.source = 'dvla+dvsa';
+            gotData = true;
+            console.log('[DVSA] MOT history retrieved');
+          } else {
+            console.error('[DVSA] API error:', r.status, await r.text());
           }
+        } catch (e) {
+          console.error('[DVSA] Fetch error:', e.message);
         }
       }
     }
 
-    // ── DVLA VES API fallback ─────────────────────────────────────────────
-    const dvlaKey = process.env.DVLA_API_KEY;
-    if (dvlaKey) {
-      const r = await fetch('https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': dvlaKey },
-        body: JSON.stringify({ registrationNumber: reg })
-      });
-      if (r.ok) {
-        const d = await r.json();
-        return res.status(200).json({
-          registration: reg,
-          make: d.make || '',
-          colour: d.colour || '',
-          fuelType: d.fuelType || '',
-          engineSize: d.engineCapacity ? d.engineCapacity + 'cc' : '',
-          year: d.yearOfManufacture ? String(d.yearOfManufacture) : '',
-          motStatus: d.motStatus || '',
-          motExpiry: d.motExpiryDate || '',
-          taxStatus: d.taxStatus || '',
-          taxDue: d.taxDueDate || '',
-          motHistory: [],
-          source: 'dvla'
-        });
-      }
+    if (gotData) {
+      return res.status(200).json(result);
     }
 
-    // ── No API configured — manual entry ──────────────────────────────────
-    return res.status(200).json({
-      registration: reg, make: '', model: '', colour: '', fuelType: '', year: '',
-      motStatus: '', motExpiry: '', taxStatus: '', taxDue: '',
-      motHistory: [],
-      source: 'manual',
-      message: 'Enter vehicle details manually below'
-    });
+    // ── No data from either API — manual entry ────────────────────────────
+    result.message = 'Enter vehicle details manually below';
+    return res.status(200).json(result);
 
   } catch (err) {
     console.error('[Vehicle] Error:', err.message);
