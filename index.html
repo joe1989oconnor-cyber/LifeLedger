@@ -4756,9 +4756,10 @@ function sbLoadAllData(callback) {
       .then(function(r){ return r.json(); })
       .then(function(p){
         if (p && (p.move_from || p.move_to)) {
+          // Set ownership tag FIRST so renderMoveHeader's ownership check passes
+          var _uid2 = load('last_user_id',''); if(_uid2) save('move_user_id', _uid2);
           moveFrom = p.move_from || ''; moveTo = p.move_to || ''; moveDate = p.move_date || '';
           save('moveFrom', moveFrom); save('moveTo', moveTo); save('moveDate', moveDate);
-          var _uid2 = load('last_user_id',''); if(_uid2) save('move_user_id', _uid2);
           if (document.getElementById('page-moving')) renderMoveHeader();
         }
       }).catch(function(){});
@@ -5087,16 +5088,12 @@ function saveMoveSetup() {
   // Sync move details to Supabase profile so they persist across devices/logins
   (function(){
     var _tok = sbToken || load('sb_token', null);
-    console.log('[Move save] token present:', !!_tok, 'isGuest:', isGuest);
-    if (!_tok || isGuest) { console.warn('[Move save] SKIPPED — no token or guest mode'); return; }
+    if (!_tok || isGuest) return;
     fetch('/api/supabase/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _tok },
       body: JSON.stringify({ move_from: from, move_to: to, move_date: date })
-    })
-    .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
-    .then(function(res){ console.log('[Move save] response:', res.status, JSON.stringify(res.body)); })
-    .catch(function(e){ console.error('[Supabase] Move save error:', e); });
+    }).catch(function(e){ console.error('[Supabase] Move save error:', e); });
   })();
   closeModal('moveSetupModal');
   renderMoveHeader();
@@ -5117,9 +5114,10 @@ function renderMoveHeader() {
     try { localStorage.removeItem('ll_moveFrom'); localStorage.removeItem('ll_moveTo');
           localStorage.removeItem('ll_moveDate'); localStorage.removeItem('ll_move_user_id'); } catch(e) {}
   } else {
-    moveFrom = load('moveFrom', '');
-    moveTo = load('moveTo', '');
-    moveDate = load('moveDate', '');
+    // Prefer in-memory values (e.g. just restored from Supabase); fall back to localStorage
+    moveFrom = moveFrom || load('moveFrom', '');
+    moveTo = moveTo || load('moveTo', '');
+    moveDate = moveDate || load('moveDate', '');
   }
 
   var prompt = document.getElementById('moveSetupPrompt');
