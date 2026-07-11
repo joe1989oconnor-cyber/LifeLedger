@@ -4748,19 +4748,26 @@ function sbLoadAllData(callback) {
   bills=[]; inventory=[]; docs=[]; members=[]; notes=[]; vehicles=[];
   properties=[]; tenants=[];
   moveFrom=''; moveTo=''; moveDate='';
-  // Restore move details from Supabase profile
+  window._moveFetchTried = false;
+  // Restore move details from Supabase profile (authoritative source across devices)
   (function(){
     var _tok = sbToken || load('sb_token', null);
     if (!_tok) return;
     fetch('/api/supabase/profile', { headers: { 'Authorization': 'Bearer ' + _tok } })
       .then(function(r){ return r.json(); })
       .then(function(p){
+        var _uid2 = load('last_user_id','');
         if (p && (p.move_from || p.move_to)) {
-          // Set ownership tag FIRST so renderMoveHeader's ownership check passes
-          var _uid2 = load('last_user_id',''); if(_uid2) save('move_user_id', _uid2);
+          if(_uid2) save('move_user_id', _uid2);
           moveFrom = p.move_from || ''; moveTo = p.move_to || ''; moveDate = p.move_date || '';
           save('moveFrom', moveFrom); save('moveTo', moveTo); save('moveDate', moveDate);
-          if (document.getElementById('page-moving')) renderMoveHeader();
+        } else {
+          // No move on record for this user — ensure it's cleared
+          moveFrom=''; moveTo=''; moveDate='';
+        }
+        // Always re-render the move header once we know the answer
+        if (typeof renderMoveHeader === 'function' && document.getElementById('page-moving')) {
+          renderMoveHeader();
         }
       }).catch(function(){});
   })();
@@ -5105,6 +5112,22 @@ function saveMoveSetup() {
 }
 
 function renderMoveHeader() {
+  // Self-heal: if signed in but move data is empty, fetch from Supabase profile once
+  var _tokMH = sbToken || load('sb_token', null);
+  if (_tokMH && !isGuest && !moveFrom && !moveTo && !window._moveFetchTried) {
+    window._moveFetchTried = true;
+    fetch('/api/supabase/profile', { headers: { 'Authorization': 'Bearer ' + _tokMH } })
+      .then(function(r){ return r.json(); })
+      .then(function(p){
+        if (p && (p.move_from || p.move_to)) {
+          var _u = load('last_user_id',''); if(_u) save('move_user_id', _u);
+          moveFrom = p.move_from || ''; moveTo = p.move_to || ''; moveDate = p.move_date || '';
+          save('moveFrom', moveFrom); save('moveTo', moveTo); save('moveDate', moveDate);
+          renderMoveHeader();
+        }
+      }).catch(function(){});
+  }
+
   // Only load move address if it belongs to the current user
   var _savedMoveUid = load('move_user_id', '');
   var _currentUid = load('last_user_id', '');
