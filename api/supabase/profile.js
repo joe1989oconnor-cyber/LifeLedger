@@ -46,11 +46,26 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'No valid fields to update' });
       }
 
+      // Try to update the existing profile row first
       const updated = await sb(
         `/rest/v1/profiles?id=eq.${userId}`,
         'PATCH', body, null, SUPABASE_SERVICE_KEY
       );
-      return res.status(200).json({ success: true, data: Array.isArray(updated) ? updated[0] : updated });
+
+      // If PATCH matched no rows (no profile row exists), insert one via upsert
+      const updatedRow = Array.isArray(updated) ? updated[0] : updated;
+      if (!updatedRow || (Array.isArray(updated) && updated.length === 0)) {
+        const insertBody = Object.assign({ id: userId }, body);
+        const inserted = await sbUpsert(
+          `/rest/v1/profiles`,
+          insertBody,
+          SUPABASE_SERVICE_KEY
+        );
+        const insertedRow = Array.isArray(inserted) ? inserted[0] : inserted;
+        return res.status(200).json({ success: true, mode: 'insert', data: insertedRow });
+      }
+
+      return res.status(200).json({ success: true, mode: 'update', data: updatedRow });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
@@ -71,6 +86,23 @@ async function sb(path, method, body, token, apiKey) {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await r.text();
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+// Upsert: insert a row, or merge into the existing one if the id already exists
+async function sbUpsert(path, body, apiKey) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': apiKey,
+    'Authorization': `Bearer ${apiKey}`,
+    'Prefer': 'return=representation,resolution=merge-duplicates'
+  };
+  const r = await fetch(`${SUPABASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
   });
   const text = await r.text();
   try { return JSON.parse(text); } catch { return text; }
