@@ -3516,6 +3516,15 @@ function saveItem(){
   toast('Item saved','success');
 }
 function delItem(id){
+  var it=inventory.find(function(x){return x.id===id;});
+  if(it&&it.sb_id){
+    var _tok=sbToken||load('sb_token',null);
+    if(_tok&&!isGuest){
+      fetch('/api/supabase/data?table=inventory&id='+it.sb_id,{
+        method:'DELETE',headers:{'Authorization':'Bearer '+_tok}
+      }).catch(function(e){console.error('[Supabase] Item delete error:',e);});
+    }
+  }
   inventory=inventory.filter(function(i){return i.id!==id;});
   save('inventory',inventory);renderInventory();toast('Item removed','success');
 }
@@ -3593,7 +3602,7 @@ function handleUpload(inp){
   })();
   toast(f.name+' uploaded','success');awardXP(15,'vault');
 }
-function deleteDoc(id){docs=docs.filter(function(d){return d.id!==id;});save('docs',docs);renderVault();toast('Document removed','success');}
+function deleteDoc(id){var d=docs.find(function(x){return x.id===id;});if(d&&d.sb_id){var _tok=sbToken||load('sb_token',null);if(_tok&&!isGuest){fetch('/api/supabase/data?table=docs&id='+d.sb_id,{method:'DELETE',headers:{'Authorization':'Bearer '+_tok}}).catch(function(e){console.error('[Supabase] Doc delete error:',e);});}}docs=docs.filter(function(x){return x.id!==id;});save('docs',docs);renderVault();toast('Document removed','success');}
 
 // ── HOUSEHOLD ──────────────────────────────────────────────────────────────
 function renderHousehold(){
@@ -5524,7 +5533,18 @@ function editVehicle(id) {
 
 function deleteVehicle(id) {
   if (!confirm('Remove this vehicle?')) return;
-  vehicles = vehicles.filter(function(v) { return v.id !== id; });
+  var v = vehicles.find(function(x){ return x.id === id; });
+  // Delete from Supabase if it has a synced row
+  if (v && v.sb_id) {
+    var _tok = sbToken || load('sb_token', null);
+    if (_tok && !isGuest) {
+      fetch('/api/supabase/data?table=vehicles&id=' + v.sb_id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + _tok }
+      }).catch(function(e){ console.error('[Supabase] Vehicle delete error:', e); });
+    }
+  }
+  vehicles = vehicles.filter(function(x) { return x.id !== id; });
   save('vehicles', vehicles);
   renderVehicle();
   toast('Vehicle removed', 'success');
@@ -5669,7 +5689,17 @@ function pinNote(id) {
 
 function deleteNote(id) {
   if (!confirm('Delete this note?')) return;
-  notes = notes.filter(function(n) { return n.id !== id; });
+  var n = notes.find(function(x){ return x.id === id; });
+  if (n && n.sb_id) {
+    var _tok = sbToken || load('sb_token', null);
+    if (_tok && !isGuest) {
+      fetch('/api/supabase/data?table=notes&id=' + n.sb_id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + _tok }
+      }).catch(function(e){ console.error('[Supabase] Note delete error:', e); });
+    }
+  }
+  notes = notes.filter(function(x) { return x.id !== id; });
   save('notes', notes);
   renderNotes();
   toast('Note deleted', 'success');
