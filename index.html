@@ -5087,12 +5087,16 @@ function saveMoveSetup() {
   // Sync move details to Supabase profile so they persist across devices/logins
   (function(){
     var _tok = sbToken || load('sb_token', null);
-    if (!_tok || isGuest) return;
+    console.log('[Move save] token present:', !!_tok, 'isGuest:', isGuest);
+    if (!_tok || isGuest) { console.warn('[Move save] SKIPPED — no token or guest mode'); return; }
     fetch('/api/supabase/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _tok },
       body: JSON.stringify({ move_from: from, move_to: to, move_date: date })
-    }).catch(function(e){ console.error('[Supabase] Move save error:', e); });
+    })
+    .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
+    .then(function(res){ console.log('[Move save] response:', res.status, JSON.stringify(res.body)); })
+    .catch(function(e){ console.error('[Supabase] Move save error:', e); });
   })();
   closeModal('moveSetupModal');
   renderMoveHeader();
