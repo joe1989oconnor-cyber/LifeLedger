@@ -1661,7 +1661,7 @@ footer a:hover{color:var(--teal);}
         <div class="page-title">Notes</div>
         <div class="page-sub">Quick notes and reminders</div>
       </div>
-      <button class="btn-add keep-mobile" onclick="openAddNote()"><i class="ti ti-plus"></i> New Note</button>
+      <button class="keep-mobile" onclick="openAddNote()" style="background:var(--teal);color:#fff;border:none;border-radius:9px;padding:9px 16px;font:700 13px/1 var(--font);cursor:pointer;display:inline-flex;align-items:center;gap:6px"><i class="ti ti-plus"></i> New Note</button>
     </div>
     <div id="notesContent"></div>
   </div>
@@ -5638,7 +5638,7 @@ function renderNotes() {
     return '<div class="note-card ' + colClass + '" onclick="editNote(' + n.id + ')">'
       + '<div class="note-card-actions">'
         + '<button onclick="event.stopPropagation();pinNote(' + n.id + ')" title="' + (n.pinned?'Unpin':'Pin') + '" style="background:var(--white);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;padding:4px 7px;box-shadow:0 1px 3px rgba(0,0,0,.08)">' + (n.pinned ? '📌' : '📋') + '</button>'
-        + '<button onclick="event.stopPropagation();deleteNote(' + n.id + ')" title="Delete note" style="background:var(--white);border:1px solid var(--red);border-radius:6px;cursor:pointer;font-size:13px;padding:4px 7px;color:var(--red);box-shadow:0 1px 3px rgba(0,0,0,.08)"><i class="ti ti-trash"></i></button>'
+        + '<button onclick="event.stopPropagation();deleteNote(' + n.id + ')" title="Delete note" style="background:var(--white);border:1px solid var(--border);border-radius:50%;cursor:pointer;font-size:15px;line-height:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--slate-3);box-shadow:0 1px 3px rgba(0,0,0,.1)">&times;</button>'
       + '</div>'
       + (n.pinned ? '<div style="font-size:10px;color:var(--teal);font-weight:700;margin-bottom:4px">📌 PINNED</div>' : '')
       + '<div class="note-card-title">' + (n.title || 'Untitled') + '</div>'
