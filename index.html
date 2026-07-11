@@ -5114,18 +5114,25 @@ function saveMoveSetup() {
 function renderMoveHeader() {
   // Self-heal: if signed in but move data is empty, fetch from Supabase profile once
   var _tokMH = sbToken || load('sb_token', null);
+  console.log('[Move load] renderMoveHeader — token:', !!_tokMH, 'isGuest:', isGuest, 'moveFrom:', moveFrom, 'tried:', !!window._moveFetchTried);
   if (_tokMH && !isGuest && !moveFrom && !moveTo && !window._moveFetchTried) {
     window._moveFetchTried = true;
+    console.log('[Move load] fetching profile...');
     fetch('/api/supabase/profile', { headers: { 'Authorization': 'Bearer ' + _tokMH } })
-      .then(function(r){ return r.json(); })
-      .then(function(p){
+      .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
+      .then(function(res){
+        console.log('[Move load] profile response:', res.status, JSON.stringify(res.body));
+        var p = res.body || {};
         if (p && (p.move_from || p.move_to)) {
           var _u = load('last_user_id',''); if(_u) save('move_user_id', _u);
           moveFrom = p.move_from || ''; moveTo = p.move_to || ''; moveDate = p.move_date || '';
           save('moveFrom', moveFrom); save('moveTo', moveTo); save('moveDate', moveDate);
+          console.log('[Move load] restored — re-rendering');
           renderMoveHeader();
+        } else {
+          console.warn('[Move load] profile had no move data');
         }
-      }).catch(function(){});
+      }).catch(function(e){ console.error('[Move load] fetch error:', e); });
   }
 
   // Only load move address if it belongs to the current user
