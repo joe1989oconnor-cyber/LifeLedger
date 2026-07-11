@@ -23,7 +23,14 @@ module.exports = async function handler(req, res) {
 
       // Extract user ID from wherever Supabase puts it
       const userId = authRes.user?.id || authRes.id || null;
-      const accessToken = authRes.access_token || null;
+      // When confirmation is OFF, Supabase returns the token inside `session`;
+      // some versions put it at the top level. Check both.
+      const accessToken = authRes.access_token
+        || (authRes.session && authRes.session.access_token)
+        || null;
+      const refreshToken = authRes.refresh_token
+        || (authRes.session && authRes.session.refresh_token)
+        || null;
 
       // When email confirmation is ON and it's a NEW user:
       // Supabase returns { user: { id, email, ... }, session: null }
@@ -55,7 +62,7 @@ module.exports = async function handler(req, res) {
           requiresConfirmation: false,
           user: { id: userId, email, name: name || email.split('@')[0], mode: mode || 'individual', is_pro: false },
           access_token: accessToken,
-          refresh_token: authRes.refresh_token
+          refresh_token: refreshToken
         });
       }
 
