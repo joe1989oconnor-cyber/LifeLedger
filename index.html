@@ -4659,7 +4659,11 @@ function sbSignUp(name, email, password, mode) {
     save('sb_refresh', data.refresh_token);
     currentMode = mode || 'individual';
     isGuest = false;
-    initData();
+    var _keep = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+    try { Object.keys(localStorage).forEach(function(k){ if(_keep.indexOf(k)<0){ try{localStorage.removeItem(k);}catch(e){} } }); } catch(e) {}
+    save('last_user_id', data.user.id);
+    window._moveFetchTried = false;
+    initBlank();
     enterApp(data.user.name, data.user.email, false);
     toast('Welcome to LifeLedger, ' + data.user.name + '! 🎉', 'success');
   })
@@ -4983,7 +4987,22 @@ function signInWithGoogle() {
 }
 
 // ── Handle Google OAuth callback ──────────────────────────────────────────
-(function checkAuthCallback() {
+function _googleEnter(name, user) {
+  // If switching to a different user, wipe all local state first
+  var _last = load('last_user_id','');
+  if (_last && _last !== user.id) {
+    var _keep = ['ll_sb_token','ll_sb_refresh','ll_dark'];
+    try { Object.keys(localStorage).forEach(function(k){ if(_keep.indexOf(k)<0){ try{localStorage.removeItem(k);}catch(e){} } }); } catch(e) {}
+  }
+  save('last_user_id', user.id);
+  window._moveFetchTried = false;
+  sbLoadAllData(function() {
+    enterApp(name, user.email, false);
+    toast('Signed in with Google ✓', 'success');
+  });
+}
+
+function checkAuthCallback() {
   // Supabase returns tokens in the URL hash after Google OAuth
   var hash = window.location.hash;
   if (!hash || hash.indexOf('access_token') < 0) return;
@@ -5024,20 +5043,14 @@ function signInWithGoogle() {
     })
     .then(function(r) { return r.json(); })
     .then(function(profile) {
-      sbLoadAllData(function() {
-        enterApp(name, user.email, false);
-        toast('Signed in with Google ✓', 'success');
-      });
+      _googleEnter(name, user);
     })
     .catch(function() {
-      sbLoadAllData(function() {
-        enterApp(name, user.email, false);
-        toast('Signed in with Google ✓', 'success');
-      });
+      _googleEnter(name, user);
     });
   })
   .catch(function(err) { console.error('[Google Auth] Error:', err); });
-})();
+}
 
 
 // ── MOVE SETUP ────────────────────────────────────────────────────────────
