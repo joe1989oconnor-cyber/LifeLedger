@@ -5637,8 +5637,8 @@ function renderNotes() {
     var dateStr = n.updated ? 'Edited ' + fmtD(n.updated) : fmtD(n.created);
     return '<div class="note-card ' + colClass + '" onclick="editNote(' + n.id + ')">'
       + '<div class="note-card-actions">'
-        + '<button class="btn-xs" onclick="event.stopPropagation();pinNote(' + n.id + ')" title="' + (n.pinned?'Unpin':'Pin') + '" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">' + (n.pinned ? '📌' : '📋') + '</button>'
-        + '<button class="btn-xs bxs-red" onclick="event.stopPropagation();deleteNote(' + n.id + ')"><i class="ti ti-trash"></i></button>'
+        + '<button onclick="event.stopPropagation();pinNote(' + n.id + ')" title="' + (n.pinned?'Unpin':'Pin') + '" style="background:var(--white);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;padding:4px 7px;box-shadow:0 1px 3px rgba(0,0,0,.08)">' + (n.pinned ? '📌' : '📋') + '</button>'
+        + '<button onclick="event.stopPropagation();deleteNote(' + n.id + ')" title="Delete note" style="background:var(--white);border:1px solid var(--red);border-radius:6px;cursor:pointer;font-size:13px;padding:4px 7px;color:var(--red);box-shadow:0 1px 3px rgba(0,0,0,.08)"><i class="ti ti-trash"></i></button>'
       + '</div>'
       + (n.pinned ? '<div style="font-size:10px;color:var(--teal);font-weight:700;margin-bottom:4px">📌 PINNED</div>' : '')
       + '<div class="note-card-title">' + (n.title || 'Untitled') + '</div>'
