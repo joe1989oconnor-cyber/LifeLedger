@@ -5004,14 +5004,14 @@ function _googleEnter(name, user) {
   });
 }
 
-function checkAuthCallback() {
+function checkAuthCallback(passedHash) {
   console.log('[GAUTH] checkAuthCallback start');
-  // Supabase returns tokens in the URL hash after Google OAuth
-  var hash = window.location.hash;
-  if (!hash || hash.indexOf('access_token') < 0) return;
+  // Use the hash passed from the load router (it may already be cleared from the URL)
+  var hash = passedHash || window.location.hash;
+  if (!hash || hash.indexOf('access_token') < 0) { console.warn('[GAUTH] no access_token in hash — aborting'); return; }
 
-  // Clear the hash from the URL immediately
-  window.history.replaceState({}, '', window.location.pathname);
+  // Ensure the hash is cleared from the URL
+  try { window.history.replaceState({}, '', window.location.pathname); } catch(e) {}
 
   var hashParams = new URLSearchParams(hash.replace('#', ''));
   var accessToken = hashParams.get('access_token');
@@ -5907,7 +5907,7 @@ window.addEventListener('load',function(){
     } else {
       // Google OAuth
       console.log('[LOAD] routing to checkAuthCallback');
-      checkAuthCallback();
+      checkAuthCallback(_urlHash);
     }
     return;
   }
