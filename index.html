@@ -2016,10 +2016,11 @@ function enterApp(name,email,guest){
   // Always hide mode switcher - users choose mode at signup
   var _ms=document.getElementById('modeStrip');
   if(_ms)_ms.style.display='none';
+  console.log('[ENTER] enterApp showing app screen for', email);
   showScreen('app');
-  loadThemes();
-  renderAll();
-  if(currentMode==='landlord'){nav('ll-dashboard',null);}
+  try { loadThemes(); } catch(e){ console.error('[enterApp] loadThemes failed:', e); }
+  try { renderAll(); } catch(e){ console.error('[enterApp] renderAll failed:', e); }
+  try { if(currentMode==='landlord'){nav('ll-dashboard',null);} } catch(e){ console.error('[enterApp] nav failed:', e); }
 }
 function logOut(){
   if(isVercelEnv()&&!isGuest){sbSignOut();}
@@ -4988,6 +4989,7 @@ function signInWithGoogle() {
 
 // ── Handle Google OAuth callback ──────────────────────────────────────────
 function _googleEnter(name, user) {
+  console.log('[GAUTH] _googleEnter for', user && user.email);
   // If switching to a different user, wipe all local state first
   var _last = load('last_user_id','');
   if (_last && _last !== user.id) {
@@ -5003,6 +5005,7 @@ function _googleEnter(name, user) {
 }
 
 function checkAuthCallback() {
+  console.log('[GAUTH] checkAuthCallback start');
   // Supabase returns tokens in the URL hash after Google OAuth
   var hash = window.location.hash;
   if (!hash || hash.indexOf('access_token') < 0) return;
@@ -5864,6 +5867,7 @@ function resendConfirmEmail() {
 })();
 
 window.addEventListener('load',function(){
+  console.log('[LOAD] handler start, hash=', window.location.hash, 'search=', window.location.search);
   function hideLoader(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='none';
@@ -5902,6 +5906,7 @@ window.addEventListener('load',function(){
       checkEmailConfirmCallback();
     } else {
       // Google OAuth
+      console.log('[LOAD] routing to checkAuthCallback');
       checkAuthCallback();
     }
     return;
@@ -5971,6 +5976,7 @@ window.addEventListener('load',function(){
         }
       });
     } else {
+      console.log('[LOAD] no token — showing landing');
       hideLoader();
       showScreen('landing');
     }
