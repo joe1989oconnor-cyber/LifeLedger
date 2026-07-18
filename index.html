@@ -2026,6 +2026,7 @@ function logOut(){
   else{
     ['sb_token','sb_refresh','uname','uemail'].forEach(function(k){try{localStorage.removeItem('ll_'+k);}catch(e){}});
     isGuest=false;bills=[];budgets={};docs=[];inventory=[];
+    moveFrom='';moveTo='';moveDate='';window._moveFetchTried=false;
     showScreen('landing');
   }
 }
@@ -2076,7 +2077,9 @@ function initBlank(){
   achievements=defAchievements();
   properties=[];tenants=[];maintenance=[];compliance=[];income=[];propInventories={};
   xpPoints=0;isPro=false;isDark=darkPref;
-  moveDone=[];nextBillId=1;nextDocId=1;nextItemId=1;nextVehicleId=1;nextNoteId=1;
+  moveDone=[];moveFrom='';moveTo='';moveDate='';
+  window._moveFetchTried=false;
+  nextBillId=1;nextDocId=1;nextItemId=1;nextVehicleId=1;nextNoteId=1;
   var t=new Date();calY=t.getFullYear();calM=t.getMonth();
 }
 
@@ -4783,6 +4786,8 @@ function sbSignOut() {
   }
   sbToken = null;
   ['sb_token','sb_refresh','uname','uemail'].forEach(function(k){ try{localStorage.removeItem('ll_'+k);}catch(e){} });
+  // Clear in-memory move details so they can't carry into the next account
+  moveFrom=''; moveTo=''; moveDate=''; window._moveFetchTried=false;
   showScreen('landing');
 }
 
