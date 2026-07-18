@@ -1132,6 +1132,14 @@ footer a:hover{color:var(--teal);}
   .icon-btn{padding:0 7px;}
   .btn-add{padding:0 10px;}
 }
+
+/* ── Responsive split layouts ─────────────────────────────────────────── */
+.split-2{display:grid;grid-template-columns:1fr var(--split-w,260px);gap:13px;}
+.split-even{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.split-2>*,.split-even>*{min-width:0;}
+@media(max-width:920px){
+  .split-2,.split-even{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -1475,7 +1483,7 @@ footer a:hover{color:var(--teal);}
 
 <div class="page" id="page-budget">
   <div class="page-head"><div class="ph-left"><div class="page-title">Budget</div><div class="page-sub">Monthly limits &amp; alerts</div></div><button class="btn-add" onclick="openModal('budgetModal')"><i class="ti ti-edit"></i> Edit Budgets</button></div>
-  <div style="display:grid;grid-template-columns:1fr 280px;gap:13px" id="budgetLayout">
+  <div class="split-2" style="--split-w:280px" id="budgetLayout">
     <div class="card"><div class="card-head"><div class="card-title">Spend vs Budget</div></div><div class="card-body" id="budgetBars"></div></div>
     <div>
       <div class="card" style="margin-bottom:12px"><div class="card-head"><div class="card-title">This Month</div></div><div class="card-body" style="text-align:center"><div style="position:relative;height:120px;display:flex;align-items:center;justify-content:center"><canvas id="budgetDonut"></canvas><div style="position:absolute;text-align:center"><div style="font-size:21px;font-weight:800" id="budgetPct">87%</div><div style="font-size:10px;color:var(--slate-3)">used</div></div></div><div style="display:flex;justify-content:space-around;margin-top:10px"><div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--teal)" id="budgetSpent">&pound;1,847</div><div style="font-size:10.5px;color:var(--slate-3)">Spent</div></div><div style="text-align:center"><div style="font-size:16px;font-weight:800" id="budgetTotal">&pound;2,120</div><div style="font-size:10.5px;color:var(--slate-3)">Budget</div></div><div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--green)" id="budgetLeft">&pound;273</div><div style="font-size:10.5px;color:var(--slate-3)">Left</div></div></div></div></div>
@@ -1486,7 +1494,7 @@ footer a:hover{color:var(--teal);}
 
 <div class="page" id="page-calendar">
   <div class="page-head"><div class="ph-left"><div class="page-title">Calendar</div><div class="page-sub">Bill due dates at a glance</div></div></div>
-  <div style="display:grid;grid-template-columns:1fr 240px;gap:13px">
+  <div class="split-2" style="--split-w:240px">
     <div class="card"><div class="card-body"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><button class="icon-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button><span style="font-size:14.5px;font-weight:700" id="calLabel"></span><button class="icon-btn" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button></div><div class="cal-grid" id="calHead"></div><div class="cal-grid" id="calGrid" style="margin-top:3px"></div></div></div>
     <div>
       <div class="card" style="margin-bottom:12px"><div class="card-head"><div class="card-title">Due this month</div></div><div id="monthBills" style="max-height:260px;overflow-y:auto"></div></div>
@@ -1586,7 +1594,7 @@ footer a:hover{color:var(--teal);}
 
 <div class="page" id="page-household">
   <div class="page-head"><div class="ph-left"><div class="page-title">Household</div><div class="page-sub">Shared bills, split costs &amp; member roles</div></div><button class="btn-add" onclick="openModal('inviteModal')"><i class="ti ti-user-plus"></i> Invite</button></div>
-  <div style="display:grid;grid-template-columns:1fr 260px;gap:13px" id="householdLayout">
+  <div class="split-2" id="householdLayout">
     <div><div class="card" style="margin-bottom:13px"><div class="card-head"><div class="card-title">Members</div></div><div class="card-body" style="padding:0" id="memberList"></div></div>
     <div class="card"><div class="card-head"><div class="card-title">Shared Bills</div></div><div style="overflow-x:auto" id="sharedBillsList"></div></div></div>
     <div><div class="card" style="margin-bottom:12px"><div class="card-head"><div class="card-title">Split Summary</div></div><div class="card-body" id="splitSummary"></div></div>
@@ -1625,7 +1633,7 @@ footer a:hover{color:var(--teal);}
     <div class="xp-info"><div class="xp-level" id="xpHeroLvl">Level 3 &mdash; Life Organiser</div><div class="xp-sub" id="xpHeroSub">480 XP &middot; 120 to Level 4</div><div class="xp-bar-lg"><div class="xp-bar-lg-fill" id="xpHeroFill" style="width:80%"></div></div></div>
     <div class="xp-stat-box"><div style="font-size:22px;font-weight:800" id="xpHeroTotal">480</div><div style="font-size:10.5px;color:rgba(255,255,255,.6)">Total XP</div></div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  <div class="split-even">
     <div><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--slate-2)">Achievements</div><div id="achList"></div></div>
     <div>
       <div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--slate-2)">Life Store</div>
@@ -2698,14 +2706,7 @@ function renderDash(){
     }
     var obEl=document.getElementById('dashOnboard');
     if(obEl){
-      obEl.innerHTML=(!bankConnected
-        ?'<div style="background:linear-gradient(90deg,var(--teal-xl),var(--blue-l));border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px">'
-          +'<div style="width:36px;height:36px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#fff;font-size:18px"></i></div>'
-          +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate);margin-bottom:2px">Import bills automatically</div>'
-          +'<div style="font-size:12px;color:var(--slate-3)">Connect your bank and LifeLedger finds your bills — no manual entry needed</div></div>'
-          +'<button onclick="nav(\'bank\',null)" style="background:var(--teal);border:none;border-radius:8px;padding:8px 14px;font:700 12.5px/1 var(--font);color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-link"></i> Connect bank</button>'
-          +'</div>'
-        :'')
+      obEl.innerHTML=''
         +'<div style="background:linear-gradient(135deg,var(--teal-xl),var(--blue-l));border:1.5px solid rgba(13,148,136,.18);border-radius:16px;padding:28px;text-align:center;max-width:520px;margin:0 auto">'
         +'<div style="font-size:40px;margin-bottom:14px">👋</div>'
         +'<div style="font-size:20px;font-weight:800;margin-bottom:6px;color:var(--slate)">Welcome to LifeLedger</div>'
@@ -2717,6 +2718,7 @@ function renderDash(){
         +'<button onclick="nav(\'moving\',null)" style="background:none;border:none;color:var(--teal);font:600 13px/1 var(--font);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-truck"></i> Moving hub</button>'
         +'</div></div>';
     }
+    if(typeof renderOnboarding==='function')renderOnboarding();
     return;
   }
 
@@ -2724,22 +2726,6 @@ function renderDash(){
   var ob3=document.getElementById('dashOnboard');if(ob3)ob3.style.display='none';
   if(dashGrid)dashGrid.style.display='';
   if(ratesBanner)ratesBanner.style.display='';
-
-  // ── Bank connect banner ────────────────────────────────────────────────
-  var dbp=document.getElementById('dashBankPrompt');
-  if(!dbp){
-    dbp=document.createElement('div');dbp.id='dashBankPrompt';
-    var _dp=document.getElementById('page-dashboard');
-    if(_dp){var _sr=_dp.querySelector('.stat-row');if(_sr)_sr.parentNode.insertBefore(dbp,_sr);}
-  }
-  if(dbp){
-    dbp.innerHTML=bankConnected?'':'<div style="background:linear-gradient(90deg,var(--teal-xl),var(--blue-l));border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px">'
-      +'<div style="width:36px;height:36px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#fff;font-size:18px"></i></div>'
-      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate);margin-bottom:2px">Import bills automatically</div>'
-      +'<div style="font-size:12px;color:var(--slate-3)">Connect your bank and LifeLedger finds your bills, tracks your spend, and personalises your savings</div></div>'
-      +'<button onclick="nav(\'bank\',null)" style="background:var(--teal);border:none;border-radius:8px;padding:8px 14px;font:700 12.5px/1 var(--font);color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-link"></i> Connect bank</button>'
-      +'</div>';
-  }
 
   // ── Onboarding strip ────────────────────────────────────────────────────
   if(typeof renderOnboarding==='function')renderOnboarding();
