@@ -2016,7 +2016,6 @@ function enterApp(name,email,guest){
   // Always hide mode switcher - users choose mode at signup
   var _ms=document.getElementById('modeStrip');
   if(_ms)_ms.style.display='none';
-  console.log('[ENTER] enterApp showing app screen for', email);
   showScreen('app');
   try { loadThemes(); } catch(e){ console.error('[enterApp] loadThemes failed:', e); }
   try { renderAll(); } catch(e){ console.error('[enterApp] renderAll failed:', e); }
@@ -3572,7 +3571,7 @@ function renderVault(){
         ?'<div class="vault-exp-v2 '+(isExp?'vault-exp-warn':isWarn?'vault-exp-warn':'vault-exp-ok')+'"><i class="ti '+(isExp?'ti-calendar-x':isWarn?'ti-clock':'ti-calendar-check')+'"></i> '+(isExp?'Expired':'Expires')+' '+fmtD(d.expiry)+'</div>'
         :'<div style="font-size:11px;color:var(--slate-3)">No expiry set</div>')
       +'<div class="vault-card-actions">'
-      +'<button class="btn-xs bxs-teal" style="flex:1;justify-content:center" onclick="toast(\'Opening document viewer...\',\'success\')"><i class="ti ti-eye"></i> View</button>'
+      +'<button class="btn-xs bxs-teal" style="flex:1;justify-content:center" onclick="viewDoc('+d.id+')"><i class="ti ti-eye"></i> View</button>'
       +'<button class="btn-xs bxs-red" onclick="deleteDoc('+d.id+')"><i class="ti ti-trash"></i> Remove</button>'
       +'</div>'
       +'</div>';
@@ -3581,8 +3580,15 @@ function renderVault(){
 }
 function handleUpload(inp){
   var f=inp.files[0];if(!f)return;
-  var newDoc={id:nextDocId++,name:f.name.replace(/\.[^/.]+$/,''),type:f.name.split('.').pop().toUpperCase(),size:(f.size/1048576).toFixed(1)+' MB',date:new Date().toISOString().split('T')[0],expiry:'',icon:'ti-file',color:'#dbeafe'};
-  docs.push(newDoc);save('docs',docs);renderVault();inp.value='';
+  var newDoc={id:nextDocId++,name:f.name.replace(/\.[^/.]+$/,''),type:f.name.split('.').pop().toUpperCase(),size:(f.size/1048576).toFixed(1)+' MB',date:new Date().toISOString().split('T')[0],expiry:'',icon:'ti-file',color:'#dbeafe',fileData:null,mimeType:f.type};
+  // Read file as base64 for in-app viewing
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    newDoc.fileData=ev.target.result; // data URL (base64)
+    docs.push(newDoc);save('docs',docs);renderVault();inp.value='';
+    toast('Document uploaded ✓','success');
+  };
+  reader.readAsDataURL(f);
   // Sync to Supabase
   (function(){
     var token=sbToken||load('sb_token',null);
@@ -4989,7 +4995,6 @@ function signInWithGoogle() {
 
 // ── Handle Google OAuth callback ──────────────────────────────────────────
 function _googleEnter(name, user) {
-  console.log('[GAUTH] _googleEnter for', user && user.email);
   // If switching to a different user, wipe all local state first
   var _last = load('last_user_id','');
   if (_last && _last !== user.id) {
@@ -5005,10 +5010,9 @@ function _googleEnter(name, user) {
 }
 
 function checkAuthCallback(passedHash) {
-  console.log('[GAUTH] checkAuthCallback start');
   // Use the hash passed from the load router (it may already be cleared from the URL)
   var hash = passedHash || window.location.hash;
-  if (!hash || hash.indexOf('access_token') < 0) { console.warn('[GAUTH] no access_token in hash — aborting'); return; }
+  if (!hash || hash.indexOf('access_token') < 0) return;
 
   // Ensure the hash is cleared from the URL
   try { window.history.replaceState({}, '', window.location.pathname); } catch(e) {}
@@ -5018,8 +5022,6 @@ function checkAuthCallback(passedHash) {
   var refreshToken = hashParams.get('refresh_token');
 
   if (!accessToken) return;
-
-  console.log('[Google Auth] Token received, signing in...');
   sbToken = accessToken;
   save('sb_token', accessToken);
   if (refreshToken) save('sb_refresh', refreshToken);
@@ -5035,7 +5037,6 @@ function checkAuthCallback(passedHash) {
   .then(function(user) {
     if (!user.id) { console.error('[Google Auth] No user ID'); return; }
     var name = (user.user_metadata && user.user_metadata.full_name) || user.email.split('@')[0];
-    console.log('[Google Auth] User:', name, user.email);
     isGuest = false;
     currentMode = 'individual';
     // Create profile if first time
@@ -5866,8 +5867,58 @@ function resendConfirmEmail() {
   }
 })();
 
+
+// ── DOCUMENT VIEWER ───────────────────────────────────────────────────────
+function viewDoc(id) {
+  var d = docs.find(function(x){ return x.id === id; });
+  if (!d) { toast('Document not found', 'error'); return; }
+  if (!d.fileData) {
+    toast('No file stored — please re-upload this document', 'error');
+    return;
+  }
+  // Populate viewer modal
+  var title = document.getElementById('docViewerTitle');
+  var frame = document.getElementById('docViewerFrame');
+  var imgEl = document.getElementById('docViewerImg');
+  var dlBtn = document.getElementById('docViewerDownload');
+  if (title) title.textContent = d.name;
+  // PDF
+  if (d.type === 'PDF' || (d.mimeType && d.mimeType.includes('pdf'))) {
+    if (frame) { frame.src = d.fileData; frame.style.display = 'block'; }
+    if (imgEl) imgEl.style.display = 'none';
+  }
+  // Image
+  else if (d.mimeType && d.mimeType.startsWith('image/')) {
+    if (imgEl) { imgEl.src = d.fileData; imgEl.style.display = 'block'; }
+    if (frame) { frame.src = ''; frame.style.display = 'none'; }
+  }
+  // Other file types — offer download
+  else {
+    if (frame) frame.style.display = 'none';
+    if (imgEl) imgEl.style.display = 'none';
+    toast('Preview not available for this file type — downloading instead', 'info');
+    downloadDoc(id);
+    return;
+  }
+  // Download button
+  if (dlBtn) {
+    dlBtn.onclick = function(){ downloadDoc(id); };
+  }
+  openModal('docViewerModal');
+}
+
+function downloadDoc(id) {
+  var d = docs.find(function(x){ return x.id === id; });
+  if (!d || !d.fileData) { toast('No file to download', 'error'); return; }
+  var a = document.createElement('a');
+  a.href = d.fileData;
+  a.download = d.name + '.' + d.type.toLowerCase();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 window.addEventListener('load',function(){
-  console.log('[LOAD] handler start, hash=', window.location.hash, 'search=', window.location.search);
   function hideLoader(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='none';
@@ -5906,7 +5957,6 @@ window.addEventListener('load',function(){
       checkEmailConfirmCallback();
     } else {
       // Google OAuth
-      console.log('[LOAD] routing to checkAuthCallback');
       checkAuthCallback(_urlHash);
     }
     return;
@@ -5976,7 +6026,6 @@ window.addEventListener('load',function(){
         }
       });
     } else {
-      console.log('[LOAD] no token — showing landing');
       hideLoader();
       showScreen('landing');
     }
@@ -7180,6 +7229,24 @@ function importSelectedBills(){
         err.style.display='none';
         applyNewPassword(null,p1);
       "><i class="ti ti-check"></i> Update password</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="docViewerModal" style="z-index:9999">
+  <div class="modal" style="max-width:780px;width:95vw;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-head" style="flex-shrink:0">
+      <div class="modal-title" id="docViewerTitle">Document</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="docViewerDownload" class="btn-xs bxs-teal" style="display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:12px">
+          <i class="ti ti-download"></i> Download
+        </button>
+        <button class="modal-close" onclick="closeModal('docViewerModal')"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div class="modal-body" style="flex:1;overflow:auto;padding:0;display:flex;align-items:center;justify-content:center;min-height:400px;background:var(--slate-5,#f8f9fa)">
+      <iframe id="docViewerFrame" src="" style="width:100%;height:70vh;border:none;display:none"></iframe>
+      <img id="docViewerImg" src="" alt="Document" style="max-width:100%;max-height:70vh;object-fit:contain;display:none;padding:12px">
     </div>
   </div>
 </div>
