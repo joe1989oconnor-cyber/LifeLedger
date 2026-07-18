@@ -2441,7 +2441,7 @@ function billRow(b,mini){
 
 // ── DASHBOARD ──────────────────────────────────────────────────────────────
 
-// ── LIVE RATES (Anthropic API for real pricing data) ──────────────────────
+// ── RATES (curated indicative pricing — not live market data) ────────────
 var liveRates=[];var ratesFetched=false;var ratesFetching=false;
 var RATE_PROVIDERS=[
   // ── Energy ─────────────────────────────────────────────────────────────
@@ -2508,49 +2508,39 @@ var AWIN_PUBLISHER_ID = '2943399';
 function loadLiveRates(){
   if(ratesFetching)return;
   ratesFetching=true;
-  var grid=document.getElementById('ratesGrid');
   var upd=document.getElementById('ratesUpdated');
 
-  // Rates come from our own endpoint (keeps the API key server-side + cached)
-  fetch('/api/ai/rates?type=dashboard')
-  .then(function(r){return r.json();})
-  .then(function(res){
-    if(!res||!res.success||!res.data) throw new Error(res&&res.error||'rates unavailable');
-    var rates=res.data;
-    // Merge with provider metadata
-    liveRates=RATE_PROVIDERS.map(function(p){
-      var r2=rates.find(function(x){return x.id===p.id;})||{monthlyGBP:0,savingVsAvgGBP:0,tagline:''};
-      // Calculate per-user saving based on their actual bills
-      var userCatBill=bills.filter(function(b){
-        if(p.cat==='energy')return b.cat==='Gas'||b.cat==='Electricity';
-        if(p.cat==='broadband')return b.cat==='Internet & Broadband';
-        if(p.cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance';
-        return false;
-      }).reduce(function(a,b){return a+(parseFloat(b.amt)||0);},0);
-      var userSaving=userCatBill>0?Math.max(0,Math.round(userCatBill-r2.monthlyGBP)):r2.savingVsAvgGBP||0;
-      return Object.assign({},p,{monthlyGBP:r2.monthlyGBP,saving:userSaving,tagline:r2.tagline||''});
-    });
-    renderRatesBanner();
-    if(upd)upd.textContent='Updated just now';
-    ratesFetching=false;
-    // Re-render stat card savings
-    var sg=document.getElementById('dashStats');
-    if(sg){
-      var totalSave=liveRates.reduce(function(a,r){return a+(r.saving||0);},0);
-    }
-  })
-  .catch(function(err){
-    // Fallback to hardcoded realistic rates if API fails
-    console.log('Rates API fallback:',err);
-    liveRates=RATE_PROVIDERS.map(function(p){
-      var fallback={octopus:{monthly:96,saving:55,tag:'Cheapest energy tariff June 2025'},eon:{monthly:108,saving:43,tag:'Fixed rate, no exit fees'},communityfibre:{monthly:28,saving:24,tag:'Full-fibre, no annual hike'},bt:{monthly:39,saving:13,tag:'Reliable UK network'},lv:{monthly:42,saving:35,tag:'Home+car bundle deal'},admiral:{monthly:48,saving:29,tag:'Multi-car discount'}};
-      var f=fallback[p.id]||{monthly:0,saving:0,tag:''};
-      return Object.assign({},p,{monthlyGBP:f.monthly,saving:f.saving,tagline:f.tag});
-    });
-    renderRatesBanner();
-    if(upd)upd.textContent='Updated (cached rates)';
-    ratesFetching=false;
+  // Curated indicative rates. These are NOT live market prices — review and
+  // update the figures below periodically, or replace with a real affiliate
+  // feed (Awin product feed / comparison partner) when one is available.
+  var CURATED={
+    octopus:       {monthly:96,  tag:'Tracker tariff, no exit fees'},
+    eon:           {monthly:108, tag:'Fixed rate, no exit fees'},
+    communityfibre:{monthly:28,  tag:'Full-fibre, no annual hike'},
+    bt:            {monthly:39,  tag:'Reliable UK network'},
+    lv:            {monthly:42,  tag:'Home + car bundle deal'},
+    admiral:       {monthly:48,  tag:'Multi-car discount'}
+  };
+  // UK category averages used when the user has no matching bill of their own
+  var CAT_AVG={energy:152, broadband:52, insurance:58};
+
+  liveRates=RATE_PROVIDERS.map(function(p){
+    var f=CURATED[p.id]||{monthly:0,tag:''};
+    // Compare against the user's own bills where we can, otherwise the UK average
+    var userCatBill=bills.filter(function(b){
+      if(p.cat==='energy')return b.cat==='Gas'||b.cat==='Electricity';
+      if(p.cat==='broadband')return b.cat==='Internet & Broadband';
+      if(p.cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance';
+      return false;
+    }).reduce(function(a,b){return a+(parseFloat(b.amt)||0);},0);
+    var baseline=userCatBill>0?userCatBill:(CAT_AVG[p.cat]||0);
+    var saving=baseline>0?Math.max(0,Math.round(baseline-f.monthly)):0;
+    return Object.assign({},p,{monthlyGBP:f.monthly,saving:saving,tagline:f.tag});
   });
+
+  renderRatesBanner();
+  if(upd)upd.textContent='Indicative rates';
+  ratesFetching=false;
 }
 
 function renderRatesBanner(){
@@ -3037,43 +3027,37 @@ function cmpRowV2(r,curAmt,curProv){
     +'</div>';
 }
 function fetchCompareRates(cb){
-  fetch('/api/ai/rates?type=compare')
-  .then(function(r){return r.json();})
-  .then(function(res){
-    if(!res||!res.success||!res.data) throw new Error(res&&res.error||'rates unavailable');
-    cb(res.data);
-  })
-  .catch(function(){
-    // Hardcoded fallback if API call fails
-    cb({
-      energy:[
-        {id:'octopus',name:'Octopus Tracker',price:96.50,tag:'#1 Rated 2025',url:'https://octopus.energy',sponsored:true},
-        {id:'eon',name:'E.ON Next Fixed 12m',price:108.00,tag:'Fixed rate',url:'https://www.eonenergy.com',sponsored:false},
-        {id:'bg',name:'British Gas Standard',price:120.00,tag:'No exit fees',url:'https://www.britishgas.co.uk',sponsored:false},
-        {id:'edf',name:'EDF Blue Tariff',price:113.00,tag:'Smart meter bonus',url:'https://www.edfenergy.com',sponsored:false},
-        {id:'bulb',name:'Bulb Energy',price:104.00,tag:'100% renewable',url:'https://bulb.co.uk',sponsored:false}
-      ],
-      broadband:[
-        {id:'cf',name:'Community Fibre 900Mbps',price:28.00,tag:'Full fibre',url:'https://www.communityfibre.co.uk',sponsored:true},
-        {id:'bt',name:'BT Full Fibre 150',price:38.99,tag:'No annual hikes',url:'https://www.bt.com',sponsored:false},
-        {id:'voda',name:'Vodafone Pro II',price:34.00,tag:'WiFi guarantee',url:'https://www.vodafone.co.uk',sponsored:false},
-        {id:'sky',name:'Sky Ultrafast Plus',price:43.99,tag:'Includes Sky TV',url:'https://www.sky.com',sponsored:false},
-        {id:'virgin',name:'Virgin M500',price:37.00,tag:'500Mbps cable',url:'https://www.virginmedia.com',sponsored:false}
-      ],
-      insurance:[
-        {id:'lv',name:'LV= Home + Car Bundle',price:82.00,tag:'Combined saving',url:'https://www.lv.com',sponsored:true},
-        {id:'admiral',name:'Admiral Multi-Car',price:76.00,tag:'Multi-car discount',url:'https://www.admiral.com',sponsored:false},
-        {id:'aviva',name:'Aviva Home & Car',price:94.00,tag:'Trusted brand',url:'https://www.aviva.co.uk',sponsored:false},
-        {id:'dl',name:'Direct Line',price:88.00,tag:'No price comparison sites',url:'https://www.directline.com',sponsored:false}
-      ],
-      mortgage:[
-        {id:'halifax',name:'Halifax 2yr Fixed',price:1095,tag:'2yr fix 4.85% LTV 75%',url:'https://www.halifax.co.uk',sponsored:true},
-        {id:'nwide',name:'Nationwide 5yr Fixed',price:1042,tag:'5yr fix 4.45% LTV 75%',url:'https://www.nationwide.co.uk',sponsored:false},
-        {id:'barc',name:'Barclays 2yr Fixed',price:1088,tag:'2yr fix 4.79% LTV 75%',url:'https://www.barclays.co.uk',sponsored:false}
-      ]
-    });
+  // Curated indicative comparison data. NOT live market prices.
+  // Review these figures periodically, or swap in a real affiliate feed.
+  cb({
+    energy:[
+      {id:'octopus',name:'Octopus Tracker',price:96.50,tag:'Tracker tariff',url:'https://octopus.energy',sponsored:true},
+      {id:'eon',name:'E.ON Next Fixed 12m',price:108.00,tag:'Fixed rate',url:'https://www.eonenergy.com',sponsored:false},
+      {id:'bg',name:'British Gas Standard',price:120.00,tag:'No exit fees',url:'https://www.britishgas.co.uk',sponsored:false},
+      {id:'edf',name:'EDF Blue Tariff',price:113.00,tag:'Smart meter bonus',url:'https://www.edfenergy.com',sponsored:false},
+      {id:'ovo',name:'OVO Energy',price:104.00,tag:'100% renewable electricity',url:'https://www.ovoenergy.com',sponsored:false}
+    ],
+    broadband:[
+      {id:'cf',name:'Community Fibre 900Mbps',price:28.00,tag:'Full fibre',url:'https://www.communityfibre.co.uk',sponsored:true},
+      {id:'bt',name:'BT Full Fibre 150',price:38.99,tag:'No annual hikes',url:'https://www.bt.com',sponsored:false},
+      {id:'voda',name:'Vodafone Pro II',price:34.00,tag:'WiFi guarantee',url:'https://www.vodafone.co.uk',sponsored:false},
+      {id:'sky',name:'Sky Ultrafast Plus',price:43.99,tag:'Includes Sky TV',url:'https://www.sky.com',sponsored:false},
+      {id:'virgin',name:'Virgin M500',price:37.00,tag:'500Mbps cable',url:'https://www.virginmedia.com',sponsored:false}
+    ],
+    insurance:[
+      {id:'lv',name:'LV= Home + Car Bundle',price:82.00,tag:'Combined saving',url:'https://www.lv.com',sponsored:true},
+      {id:'admiral',name:'Admiral Multi-Car',price:76.00,tag:'Multi-car discount',url:'https://www.admiral.com',sponsored:false},
+      {id:'aviva',name:'Aviva Home & Car',price:94.00,tag:'Trusted brand',url:'https://www.aviva.co.uk',sponsored:false},
+      {id:'dl',name:'Direct Line',price:88.00,tag:'Not on comparison sites',url:'https://www.directline.com',sponsored:false}
+    ],
+    mortgage:[
+      {id:'halifax',name:'Halifax 2yr Fixed',price:1095,tag:'2yr fix, 75% LTV',url:'https://www.halifax.co.uk',sponsored:true},
+      {id:'nwide',name:'Nationwide 5yr Fixed',price:1042,tag:'5yr fix, 75% LTV',url:'https://www.nationwide.co.uk',sponsored:false},
+      {id:'barc',name:'Barclays 2yr Fixed',price:1088,tag:'2yr fix, 75% LTV',url:'https://www.barclays.co.uk',sponsored:false}
+    ]
   });
 }
+
 function _octopusUrl(){return 'https://octopus.energy';}
 
 // ── BUDGET ─────────────────────────────────────────────────────────────────
