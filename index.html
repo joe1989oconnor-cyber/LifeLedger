@@ -488,6 +488,31 @@ a{color:inherit;text-decoration:none;}
 .dwb-solid{background:#fff;color:var(--teal-d);}
 .dwb-solid:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(0,0,0,.18);}
 .dash-action-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:16px;}
+/* ── Dashboard hero + attention ───────────────────────────────────────── */
+.dash-hero{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 22px;margin-bottom:14px;}
+.dh-label{font-size:12px;font-weight:600;color:var(--slate-3);margin-bottom:6px;}
+.dh-val{font:800 40px/1 var(--font);color:var(--slate);letter-spacing:-.02em;margin-bottom:11px;}
+.dh-val small{font-size:19px;font-weight:700;color:var(--slate-3);margin-left:5px;letter-spacing:0;}
+.dh-bar{height:8px;border-radius:99px;background:var(--slate-7);overflow:hidden;margin-bottom:9px;}
+.dh-fill{height:100%;border-radius:99px;background:var(--teal);transition:width .4s ease;}
+.dh-fill.over{background:var(--red);}
+.dh-foot{font-size:12.5px;color:var(--slate-3);display:flex;justify-content:space-between;gap:10px;}
+.dh-foot b{color:var(--slate-2);font-weight:700;}
+.attn-row{display:grid;gap:8px;margin-bottom:14px;}
+.attn-card{display:flex;align-items:center;gap:11px;background:var(--white);border:1px solid var(--border);border-left:3px solid var(--slate-5);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:background .14s;}
+.attn-card:active{background:var(--slate-8);}
+.attn-card.red{border-left-color:var(--red);}
+.attn-card.amber{border-left-color:var(--amber);}
+.attn-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.attn-lbl{font-size:13.5px;font-weight:700;color:var(--slate);}
+.attn-sub{font-size:12px;color:var(--slate-3);margin-top:1px;}
+.attn-chev{margin-left:auto;color:var(--slate-4);font-size:16px;flex-shrink:0;}
+@media(max-width:920px){
+  #dashChartGrid,#dashUpcoming{display:none;}
+  .dash-welcome .dw-right{display:none;}
+  .dash-hero{padding:17px 18px;}
+  .dh-val{font-size:34px;}
+}
 .dash-action-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .18s;}
 .dash-action-card:hover{box-shadow:var(--sh-md);transform:translateY(-1px);border-color:var(--teal);}
 .dac-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
@@ -683,7 +708,7 @@ footer a:hover{color:var(--teal);}
 /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
 @media(max-width:920px){
   /* Layout */
-  .main{margin-left:0;padding-bottom:72px;}
+  .main{margin-left:0;padding-bottom:calc(72px + env(safe-area-inset-bottom));}
   .sidebar{transform:translateX(-100%);z-index:300;}
   .sidebar.open{transform:translateX(0);}
   .content{padding:12px 12px 16px;}
@@ -761,7 +786,7 @@ footer a:hover{color:var(--teal);}
   .sb-upgrade{display:none;}
 
   /* Move toast above mob-nav */
-  .toast{bottom:80px;}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom));}
 
   /* Make bills card full width on mobile */
   .bills-card .tbl td:nth-child(3),
@@ -1409,6 +1434,7 @@ footer a:hover{color:var(--teal);}
     </div>
   </div>
   <div id="onboardStrip" class="onboard-strip"></div>
+  <div id="dashHero"></div>
   <div class="stat-row" id="dashStats"></div>
   <div class="dash-action-row" id="dashActions"></div>
   <div class="rates-banner" id="ratesBanner">
@@ -1420,7 +1446,7 @@ footer a:hover{color:var(--teal);}
     <div class="card au"><div class="card-head"><div><div class="card-title">Monthly Spend</div><div class="card-sub">Last 6 months</div></div><button class="btn-xs bxs-gray" onclick="nav('budget',null)"><i class="ti ti-chart-pie-2"></i> Budget</button></div><div class="card-body"><div style="height:170px;position:relative"><canvas id="spendChart"></canvas></div></div></div>
     <div class="card au"><div class="card-head"><div class="card-title">By Category</div></div><div class="card-body"><div style="height:115px;position:relative"><canvas id="pieChart"></canvas></div><div id="pieLegend" style="margin-top:9px"></div></div></div>
   </div>
-  <div class="card au"><div class="card-head"><div><div class="card-title">Upcoming Payments</div><div class="card-sub">Sorted by due date</div></div><div style="display:flex;gap:6px"><button class="btn-xs bxs-gray" onclick="nav('bills',null)">All bills <i class="ti ti-arrow-right"></i></button><button class="btn-xs bxs-teal" onclick="openAddBill()"><i class="ti ti-plus"></i> Add</button></div></div><div style="overflow-x:auto"><table class="tbl" id="dashTable"></table></div></div>
+  <div class="card au" id="dashUpcoming"><div class="card-head"><div><div class="card-title">Upcoming Payments</div><div class="card-sub">Sorted by due date</div></div><div style="display:flex;gap:6px"><button class="btn-xs bxs-gray" onclick="nav('bills',null)">All bills <i class="ti ti-arrow-right"></i></button><button class="btn-xs bxs-teal" onclick="openAddBill()"><i class="ti ti-plus"></i> Add</button></div></div><div style="overflow-x:auto"><table class="tbl" id="dashTable"></table></div></div>
 </div>
 
 <div class="page" id="page-bills">
@@ -1758,7 +1784,7 @@ footer a:hover{color:var(--teal);}
 </nav>
 
 <!-- Mobile More Menu -->
-<div id="mobMoreMenu" style="display:none;position:fixed;bottom:65px;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:199;padding:16px 12px;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.1)">
+<div id="mobMoreMenu" style="display:none;position:fixed;bottom:calc(65px + env(safe-area-inset-bottom));left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:199;padding:16px 12px;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.1)">
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
     <div class="mob-more-item" onclick="closeMobMore();nav('moving',null)"><div class="mob-more-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-truck"></i></div><span>Moving</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('vault',null)"><div class="mob-more-icon" style="background:var(--blue-m);color:var(--blue)"><i class="ti ti-vault"></i></div><span>Docs</span></div>
@@ -1770,6 +1796,10 @@ footer a:hover{color:var(--teal);}
     <div class="mob-more-item" onclick="closeMobMore();nav('bank',null)"><div class="mob-more-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-building-bank"></i></div><span>Bank</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('xp',null)"><div class="mob-more-icon" style="background:var(--red-m);color:var(--red)"><i class="ti ti-trophy"></i></div><span>XP</span></div>
     <div class="mob-more-item" onclick="closeMobMore();nav('settings',null)"><div class="mob-more-icon" style="background:var(--slate-7);color:var(--slate-3)"><i class="ti ti-settings"></i></div><span>Settings</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('insights',null)"><div class="mob-more-icon" style="background:var(--indigo-m);color:var(--indigo)"><i class="ti ti-sparkles"></i></div><span>Insights</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('calendar',null)"><div class="mob-more-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-calendar"></i></div><span>Calendar</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('calculator',null)"><div class="mob-more-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-calculator"></i></div><span>Calculator</span></div>
+    <div class="mob-more-item" onclick="closeMobMore();nav('upgrade',null)"><div class="mob-more-icon" style="background:var(--purple-m);color:var(--purple)"><i class="ti ti-crown"></i></div><span>Premium</span></div>
   </div>
 </div>
 <div id="mobMoreOverlay" onclick="closeMobMore()" style="display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,.3)"></div>
@@ -1965,6 +1995,9 @@ function showScreen(s){
     var el=document.getElementById(map[key]);
     if(el)el.classList.toggle('hidden',s!==key);
   });
+  var _mn=document.getElementById('mobNav');
+  if(_mn)_mn.style.display=(s==='app')?'':'none';
+  if(s!=='app'&&typeof closeMobMore==='function')closeMobMore();
 }
 function doLogin(){
   var email=(document.getElementById('loginEmail')||{}).value||'';
@@ -2199,6 +2232,7 @@ function nav(page,el){
   if(el)el.classList.add('active');
   var _nt=document.getElementById('topbarTitle');if(_nt)_nt.textContent=titlesMap[page]||page;
   var _ns=document.getElementById('sidebar');if(_ns)_ns.classList.remove('open');
+  setMobActive(page);
   if(page==='dashboard')renderDash();
   else if(page==='bills')renderBills();
   else if(page==='compare')renderCompare();
@@ -2227,8 +2261,10 @@ function nav(page,el){
   else if(page==='ll-reports')renderReports();
 }
 function setMobActive(pg){
+  var _mnMap={dashboard:'home','ll-dashboard':'home',bills:'bills',compare:'compare'};
+  var _tab=_mnMap[pg]||'more';
   document.querySelectorAll('.mob-nav-item').forEach(function(i){i.classList.remove('active');});
-  var el=document.getElementById('mn-'+pg);if(el)el.classList.add('active');
+  var el=document.getElementById('mn-'+_tab);if(el)el.classList.add('active');
 }
 function handleAddBtn(){
   if(currentMode==='landlord'){openModal('addPropertyModal');}
@@ -2696,47 +2732,50 @@ function renderDash(){
   // ── Onboarding strip ────────────────────────────────────────────────────
   if(typeof renderOnboarding==='function')renderOnboarding();
 
-  // ── Stat cards ──────────────────────────────────────────────────────────
-  var sg=document.getElementById('dashStats');
-  if(sg){
-    var budgetTotal=Object.values(budgets||{}).reduce(function(a,v){return a+(parseFloat(v)||0);},0)||2120;
-    var pct=total?Math.min(Math.round((total/budgetTotal)*100),100):0;
-    sg.innerHTML=
-      statV2('Monthly Spend','£'+total.toFixed(0),'var(--teal-xl)','var(--teal)','ti-cash',
-        pct+'% of £'+budgetTotal.toFixed(0)+' budget','neu','',function(){nav('budget',null);},'')
-      +statV2('Overdue Bills',''+overdue.length,'var(--red-m)','var(--red)','ti-calendar-x',
-        overdue.length?'Action needed now':'All payments current',
-        overdue.length?'dn':'up','',function(){nav('bills',null);},'')
-      +statV2('Switch Savings','£'+totalSave+'/mo','var(--green-m)','var(--green)','ti-arrows-exchange',
-        totalSave?'vs your current bills':'Add bills to compare',
-        totalSave?'up':'neu','',function(){nav('compare',null);},'')
-      +statV2('Inventory',invVal>=1000?'£'+(invVal/1000).toFixed(1)+'k':'£'+invVal.toFixed(0),
-        'var(--blue-m)','var(--blue)','ti-home-2',
-        inventory.length+' item'+(inventory.length!==1?'s':'')+' logged','neu','',function(){nav('inventory',null);},'')
-      +statV2('Life XP',''+xpPoints,'var(--indigo-m)','var(--indigo)','ti-trophy',
-        'Level '+(xpPoints<100?'1':xpPoints<300?'2':xpPoints<600?'3':'4')+' — '+(xpPoints<100?'Beginner':xpPoints<300?'Getting Organised':xpPoints<600?'Life Organiser':'Master'),'up','',function(){nav('xp',null);},'')
-      +statV2('Bills This Month',''+bills.length,'var(--amber-m)','var(--amber)','ti-receipt-2',
-        soon.length?soon.length+' due this week':'All up to date',
-        soon.length?'dn':'up','',function(){nav('bills',null);},'');
+  // ── Hero: spend vs budget ───────────────────────────────────────────────
+  var budgetTotal=Object.values(budgets||{}).reduce(function(a,v){return a+(parseFloat(v)||0);},0)||2120;
+  var pct=budgetTotal?Math.round((total/budgetTotal)*100):0;
+  var isOver=total>budgetTotal;
+  var hero=document.getElementById('dashHero');
+  if(hero){
+    hero.innerHTML='<div class="dash-hero au">'
+      +'<div class="dh-label">Spend this month</div>'
+      +'<div class="dh-val">£'+total.toFixed(0)+'<small>of £'+budgetTotal.toFixed(0)+'</small></div>'
+      +'<div class="dh-bar"><div class="dh-fill'+(isOver?' over':'')+'" style="width:'+Math.min(pct,100)+'%"></div></div>'
+      +'<div class="dh-foot"><span>'+pct+'% of budget</span><span>'
+      +(isOver?'<b style="color:var(--red)">£'+(total-budgetTotal).toFixed(0)+' over</b>':'<b>£'+(budgetTotal-total).toFixed(0)+' left</b>')
+      +'</span></div></div>';
   }
 
-  // ── Quick action cards ──────────────────────────────────────────────────
+  // ── Attention row — renders only when something needs action ────────────
   var da=document.getElementById('dashActions');
   if(da){
-    var actions=[];
-    if(overdue.length)actions.push({icon:'ti-calendar-x',bg:'var(--red-m)',fg:'var(--red)',label:overdue.length+' overdue bill'+(overdue.length>1?'s':''),sub:'Tap to review',fn:function(){nav('bills',null);}});
-    if(soon.length)actions.push({icon:'ti-clock',bg:'var(--amber-m)',fg:'var(--amber)',label:soon.length+' due this week',sub:'Pay before deadline',fn:function(){nav('calendar',null);}});
-    if(totalSave>0)actions.push({icon:'ti-currency-pound',bg:'var(--green-m)',fg:'var(--green)',label:'Save £'+totalSave+'/mo',sub:'Live switch deals found',fn:function(){nav('compare',null);}});
     var expDocs=docs.filter(function(d){return d.expiry&&daysUntil(d.expiry)<=60&&daysUntil(d.expiry)>=0;});
-    if(expDocs.length)actions.push({icon:'ti-file-alert',bg:'var(--amber-m)',fg:'var(--amber)',label:expDocs.length+' doc'+(expDocs.length>1?'s':'')+' expiring',sub:'Renew before deadline',fn:function(){nav('vault',null);}});
-    actions.push({icon:'ti-truck',bg:'var(--teal-xl)',fg:'var(--teal)',label:'Moving Hub',sub:'Plan your move',fn:function(){nav('moving',null);}});
-    actions.push({icon:'ti-sparkles',bg:'var(--purple-m)',fg:'var(--purple)',label:'AI Insights',sub:'See your savings report',fn:function(){nav('insights',null);}});
-    da.innerHTML=actions.map(function(a){
-      return '<div class="dash-action-card" onclick="('+a.fn.toString()+')()">'
-        +'<div class="dac-icon" style="background:'+a.bg+';color:'+a.fg+'"><i class="ti '+a.icon+'"></i></div>'
-        +'<div><div class="dac-label">'+a.label+'</div><div class="dac-sub">'+a.sub+'</div></div>'
-        +'</div>';
+    var attn=[];
+    if(overdue.length)attn.push({cls:'red',ico:'ti-calendar-x',bg:'var(--red-m)',fg:'var(--red)',lbl:overdue.length+' overdue bill'+(overdue.length>1?'s':''),sub:'Pay these first',pg:'bills'});
+    if(soon.length)attn.push({cls:'amber',ico:'ti-clock',bg:'var(--amber-m)',fg:'var(--amber)',lbl:soon.length+' due this week',sub:'Coming up shortly',pg:'calendar'});
+    if(expDocs.length)attn.push({cls:'amber',ico:'ti-file-alert',bg:'var(--amber-m)',fg:'var(--amber)',lbl:expDocs.length+' doc'+(expDocs.length>1?'s':'')+' expiring',sub:'Renew before the deadline',pg:'vault'});
+    da.className=attn.length?'attn-row':'';
+    da.innerHTML=attn.map(function(a){
+      return '<div class="attn-card '+a.cls+'" onclick="nav(\''+a.pg+'\',null)">'
+        +'<div class="attn-ico" style="background:'+a.bg+';color:'+a.fg+'"><i class="ti '+a.ico+'"></i></div>'
+        +'<div><div class="attn-lbl">'+a.lbl+'</div><div class="attn-sub">'+a.sub+'</div></div>'
+        +'<i class="ti ti-chevron-right attn-chev"></i></div>';
     }).join('');
+  }
+
+  // ── Stat cards: the four that matter ────────────────────────────────────
+  var sg=document.getElementById('dashStats');
+  if(sg){
+    sg.innerHTML=
+      statV2('Overdue',''+overdue.length,'var(--red-m)','var(--red)','ti-calendar-x',
+        overdue.length?'Action needed':'All current',overdue.length?'dn':'up','',function(){nav('bills',null);},'')
+      +statV2('Due This Week',''+soon.length,'var(--amber-m)','var(--amber)','ti-clock',
+        soon.length?'Pay before deadline':'Nothing due',soon.length?'dn':'up','',function(){nav('calendar',null);},'')
+      +statV2('Switch Savings','£'+totalSave+'/mo','var(--green-m)','var(--green)','ti-arrows-exchange',
+        totalSave?'vs your current bills':'Add bills to compare',totalSave?'up':'neu','',function(){nav('compare',null);},'')
+      +statV2('Bills Tracked',''+bills.length,'var(--slate-7)','var(--slate-3)','ti-receipt-2',
+        'Across all categories','neu','',function(){nav('bills',null);},'');
   }
 
   // ── Upcoming bills table ────────────────────────────────────────────────
@@ -6581,8 +6620,9 @@ function closeMobMore(){
   var mo=document.getElementById('mobMoreOverlay');
   if(mm)mm.style.display='none';
   if(mo)mo.style.display='none';
-  // Remove active from more btn if nothing else is active
-  var mn=document.getElementById('mn-more');if(mn)mn.classList.remove('active');
+  // Re-sync the bar to whichever page is actually showing
+  var _cur=document.querySelector('.page.active');
+  setMobActive(_cur?_cur.id.replace(/^page-/,''):'dashboard');
 }
 
 // ── FOOTER LINKS ──────────────────────────────────────────────────────────
