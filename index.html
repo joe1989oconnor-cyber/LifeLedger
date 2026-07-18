@@ -3614,6 +3614,10 @@ function handleUpload(inp){
       if(row&&row.id){
         docs=docs.map(function(d){if(d.id===newDoc.id){d.sb_id=row.id;}return d;});
         save('docs',docs);
+        console.log('[Docs] Saved to Supabase, id=',row.id);
+      } else {
+        console.error('[Docs] Row NOT saved. Response:',JSON.stringify(res));
+        toast('Document did not save to cloud — see console','error');
       }
     })
     .catch(function(e){console.error('[Supabase] Save doc:',e);});
