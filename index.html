@@ -2511,21 +2511,12 @@ function loadLiveRates(){
   var grid=document.getElementById('ratesGrid');
   var upd=document.getElementById('ratesUpdated');
 
-  // Fetch real rates using Anthropic API for current UK tariff data
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-6',
-      max_tokens:800,
-      messages:[{role:'user',content:'Return ONLY a JSON array (no markdown, no explanation) of current UK utility rates for these 6 providers. Each object: {id,monthlyGBP,savingVsAvgGBP,tagline}. Use realistic June 2025 UK prices. Providers: octopus energy tracker (energy, ~£89/mo avg household), eon next fixed (energy, ~£112/mo), community fibre 900mbps (broadband, £28/mo), bt full fibre 150 (broadband, £39/mo), lv home insurance (insurance, £42/mo), admiral car insurance (insurance, £48/mo). savingVsAvgGBP is how much cheaper vs UK avg for that category (energy avg £152, broadband avg £52, insurance avg £58). Return raw JSON array only.'}]
-    })
-  })
+  // Rates come from our own endpoint (keeps the API key server-side + cached)
+  fetch('/api/ai/rates?type=dashboard')
   .then(function(r){return r.json();})
-  .then(function(data){
-    var txt=data.content&&data.content[0]&&data.content[0].text||'[]';
-    txt=txt.replace(/```json|```/g,'').trim();
-    var rates=JSON.parse(txt);
+  .then(function(res){
+    if(!res||!res.success||!res.data) throw new Error(res&&res.error||'rates unavailable');
+    var rates=res.data;
     // Merge with provider metadata
     liveRates=RATE_PROVIDERS.map(function(p){
       var r2=rates.find(function(x){return x.id===p.id;})||{monthlyGBP:0,savingVsAvgGBP:0,tagline:''};
@@ -3046,21 +3037,11 @@ function cmpRowV2(r,curAmt,curProv){
     +'</div>';
 }
 function fetchCompareRates(cb){
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-6',
-      max_tokens:1200,
-      messages:[{role:'user',content:'Return ONLY a JSON object (no markdown) with realistic UK utility rates for June 2025. Format: {"energy":[...],"broadband":[...],"insurance":[...],"mortgage":[...]}. Each item: {id,name,price,tag,url,sponsored}. price is monthly GBP number. Energy (combined gas+electric monthly): Octopus Tracker ~96.50 (sponsored:true), E.ON Next Fixed ~108, British Gas Standard ~120, EDF Blue ~113, Bulb ~104. Broadband (monthly): Community Fibre 900Mbps £28 (sponsored:true), BT Full Fibre 150 £38.99, Vodafone Pro II £34, Sky Ultrafast £43.99, Virgin M500 £37. Insurance (monthly home+car): LV= Bundle £82 (sponsored:true), Admiral Multi £76, Aviva Home+Car £94, Direct Line £88. Mortgage (monthly on £200k): Halifax 2yr fixed £1095 (sponsored:true, price:1095), Nationwide 5yr fixed £1042 (price:1042), Barclays 2yr fixed £1088 (price:1088). URLs: octopus.energy, eonenergy.com, britishgas.co.uk, edfenergy.com, communityfibre.co.uk, bt.com, vodafone.co.uk, sky.com, virginmedia.com, lv.com, admiral.com, aviva.co.uk, directline.com, halifax.co.uk, nationwide.co.uk, barclays.co.uk. Return raw JSON only.'}]
-    })
-  })
+  fetch('/api/ai/rates?type=compare')
   .then(function(r){return r.json();})
-  .then(function(data){
-    var txt=(data.content&&data.content[0]&&data.content[0].text)||'{}';
-    txt=txt.replace(/```json|```/g,'').trim();
-    var rates=JSON.parse(txt);
-    cb(rates);
+  .then(function(res){
+    if(!res||!res.success||!res.data) throw new Error(res&&res.error||'rates unavailable');
+    cb(res.data);
   })
   .catch(function(){
     // Hardcoded fallback if API call fails
@@ -6571,6 +6552,11 @@ function hideLandlordUI(){
     // Any control that switches into / demos landlord mode
     document.querySelectorAll('[onclick*="landlord"]').forEach(function(el){
       el.style.display = 'none';
+    });
+    // Tenant Portal is part of the landlord product — hide it too
+    document.querySelectorAll('[onclick*="enterTenantDemo"]').forEach(function(el){
+      var pill = el.closest ? el.closest('.mode-pill') : null;
+      (pill || el).style.display = 'none';
     });
     var ms = document.getElementById('modeStrip');
     if (ms) ms.style.display = 'none';
