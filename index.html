@@ -3580,21 +3580,31 @@ function renderVault(){
 }
 function handleUpload(inp){
   var f=inp.files[0];if(!f)return;
-  var newDoc={id:nextDocId++,name:f.name.replace(/\.[^/.]+$/,''),type:f.name.split('.').pop().toUpperCase(),size:(f.size/1048576).toFixed(1)+' MB',date:new Date().toISOString().split('T')[0],expiry:'',icon:'ti-file',color:'#dbeafe',fileData:null,mimeType:f.type};
-  // Read file as base64 for in-app viewing
+  var newDoc={id:nextDocId++,name:f.name.replace(/\.[^/.]+$/,''),
+    type:f.name.split('.').pop().toUpperCase(),
+    size:(f.size/1048576).toFixed(1)+' MB',
+    date:new Date().toISOString().split('T')[0],
+    expiry:'',icon:'ti-file',color:'#dbeafe',
+    fileData:null,mimeType:f.type,filePath:null};
+  docs.push(newDoc);save('docs',docs);renderVault();inp.value='';
+
+  // Keep a local copy so it's viewable immediately in this session
   var reader=new FileReader();
   reader.onload=function(ev){
-    newDoc.fileData=ev.target.result; // data URL (base64)
-    docs.push(newDoc);save('docs',docs);renderVault();inp.value='';
-    toast('Document uploaded ✓','success');
+    newDoc.fileData=ev.target.result;
+    docs=docs.map(function(d){return d.id===newDoc.id?newDoc:d;});
+    save('docs',docs);
   };
   reader.readAsDataURL(f);
-  // Sync to Supabase
-  (function(){
-    var token=sbToken||load('sb_token',null);
+
+  var token=sbToken||load('sb_token',null);
+  var uid=load('last_user_id','');
+
+  function syncDocRow(){
     if(!token||isGuest)return;
     var payload={name:newDoc.name,type:newDoc.type||null,
-      expiry:newDoc.expiry||null,notes:newDoc.notes||null};
+      expiry:newDoc.expiry||null,notes:newDoc.notes||null,
+      file_path:newDoc.filePath||null};
     fetch('/api/supabase/data?table=docs',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify(payload)})
@@ -3607,10 +3617,39 @@ function handleUpload(inp){
       }
     })
     .catch(function(e){console.error('[Supabase] Save doc:',e);});
-  })();
+  }
+
+  // Upload the actual file to Supabase Storage so it persists across logins
+  if(token&&uid&&!isGuest){
+    var safeName=f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var path=uid+'/'+Date.now()+'_'+safeName;
+    fetch(SB_URL+'/storage/v1/object/documents/'+encodeURI(path),{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'apikey':SB_ANON,'x-upsert':'true'},
+      body:f
+    })
+    .then(function(r){
+      if(!r.ok) return r.text().then(function(t){throw new Error('HTTP '+r.status+': '+t);});
+      return r.json();
+    })
+    .then(function(){
+      newDoc.filePath=path;
+      docs=docs.map(function(d){return d.id===newDoc.id?newDoc:d;});
+      save('docs',docs);
+      syncDocRow();
+    })
+    .catch(function(e){
+      console.error('[Storage] Upload failed:',e.message);
+      toast('Saved locally, but cloud upload failed','error');
+      syncDocRow();
+    });
+  } else {
+    syncDocRow();
+  }
+
   toast(f.name+' uploaded','success');awardXP(15,'vault');
 }
-function deleteDoc(id){var d=docs.find(function(x){return x.id===id;});if(d&&d.sb_id){var _tok=sbToken||load('sb_token',null);if(_tok&&!isGuest){fetch('/api/supabase/data?table=docs&id='+d.sb_id,{method:'DELETE',headers:{'Authorization':'Bearer '+_tok}}).catch(function(e){console.error('[Supabase] Doc delete error:',e);});}}docs=docs.filter(function(x){return x.id!==id;});save('docs',docs);renderVault();toast('Document removed','success');}
+function deleteDoc(id){var d=docs.find(function(x){return x.id===id;});if(d&&d.filePath){var _t2=sbToken||load('sb_token',null);if(_t2&&!isGuest){fetch(SB_URL+'/storage/v1/object/documents/'+encodeURI(d.filePath),{method:'DELETE',headers:{'Authorization':'Bearer '+_t2,'apikey':SB_ANON}}).catch(function(e){console.error('[Storage] Delete failed:',e);});}}if(d&&d.sb_id){var _tok=sbToken||load('sb_token',null);if(_tok&&!isGuest){fetch('/api/supabase/data?table=docs&id='+d.sb_id,{method:'DELETE',headers:{'Authorization':'Bearer '+_tok}}).catch(function(e){console.error('[Supabase] Doc delete error:',e);});}}docs=docs.filter(function(x){return x.id!==id;});save('docs',docs);renderVault();toast('Document removed','success');}
 
 // ── HOUSEHOLD ──────────────────────────────────────────────────────────────
 function renderHousehold(){
@@ -4837,6 +4876,7 @@ function sbLoadAllData(callback) {
               expiry: doc.expiry||'', notes: doc.notes||'',
               date: doc.created_at ? doc.created_at.split('T')[0] : '',
               icon: 'ti-file', color: '#dbeafe',
+              filePath: doc.file_path || null, mimeType: '',
               size: ''
             };
           });
@@ -5868,55 +5908,80 @@ function resendConfirmEmail() {
 })();
 
 
+var SB_URL='https://siigmudvxizdzwcxqpnh.supabase.co';
+var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpaWdtdWR2eGl6ZHp3Y3hxcG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDg3NjUsImV4cCI6MjA5ODIyNDc2NX0.amkCsNeJi7pZRyihv7PuRzihu28td_8pJ-92jv-vu-M';
+
 // ── DOCUMENT VIEWER ───────────────────────────────────────────────────────
 function viewDoc(id) {
   var d = docs.find(function(x){ return x.id === id; });
   if (!d) { toast('Document not found', 'error'); return; }
-  if (!d.fileData) {
-    toast('No file stored — please re-upload this document', 'error');
+
+  // Local copy available (just uploaded this session)
+  if (d.fileData) { _showDocViewer(d, d.fileData); return; }
+
+  // Otherwise fetch a signed URL from Supabase Storage
+  if (d.filePath) {
+    var token = sbToken || load('sb_token', null);
+    if (!token) { toast('Please sign in to view documents', 'error'); return; }
+    toast('Loading document...', 'info');
+    fetch(SB_URL + '/storage/v1/object/sign/documents/' + encodeURI(d.filePath), {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token, 'apikey': SB_ANON },
+      body: JSON.stringify({ expiresIn: 3600 })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if (res && res.signedURL) { _showDocViewer(d, SB_URL + '/storage/v1' + res.signedURL); }
+      else { console.error('[Storage] Sign failed:', res); toast('Could not load document', 'error'); }
+    })
+    .catch(function(e){ console.error('[Storage] Sign error:', e); toast('Could not load document', 'error'); });
     return;
   }
-  // Populate viewer modal
+
+  toast('No file stored — please re-upload this document', 'error');
+}
+
+function _showDocViewer(d, url) {
   var title = document.getElementById('docViewerTitle');
   var frame = document.getElementById('docViewerFrame');
   var imgEl = document.getElementById('docViewerImg');
   var dlBtn = document.getElementById('docViewerDownload');
   if (title) title.textContent = d.name;
-  // PDF
-  if (d.type === 'PDF' || (d.mimeType && d.mimeType.includes('pdf'))) {
-    if (frame) { frame.src = d.fileData; frame.style.display = 'block'; }
-    if (imgEl) imgEl.style.display = 'none';
-  }
-  // Image
-  else if (d.mimeType && d.mimeType.startsWith('image/')) {
-    if (imgEl) { imgEl.src = d.fileData; imgEl.style.display = 'block'; }
+
+  var isImage = (d.mimeType && d.mimeType.indexOf('image/') === 0)
+    || ['JPG','JPEG','PNG','GIF','WEBP','SVG','HEIC'].indexOf((d.type||'').toUpperCase()) >= 0;
+  var isPdf = (d.mimeType && d.mimeType.indexOf('pdf') >= 0)
+    || (d.type||'').toUpperCase() === 'PDF';
+
+  if (isPdf) {
+    if (frame) { frame.src = url; frame.style.display = 'block'; }
+    if (imgEl) { imgEl.style.display = 'none'; }
+  } else if (isImage) {
+    if (imgEl) { imgEl.src = url; imgEl.style.display = 'block'; }
     if (frame) { frame.src = ''; frame.style.display = 'none'; }
-  }
-  // Other file types — offer download
-  else {
+  } else {
+    // Not previewable in-browser — open/download instead
     if (frame) frame.style.display = 'none';
     if (imgEl) imgEl.style.display = 'none';
-    toast('Preview not available for this file type — downloading instead', 'info');
-    downloadDoc(id);
+    window.open(url, '_blank');
+    toast('Preview not supported for this file type — opened in a new tab', 'info');
     return;
   }
-  // Download button
+
   if (dlBtn) {
-    dlBtn.onclick = function(){ downloadDoc(id); };
+    dlBtn.onclick = function(){
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = d.name + '.' + (d.type||'file').toLowerCase();
+      a.target = '_blank';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
   }
+
   openModal('docViewerModal');
 }
 
-function downloadDoc(id) {
-  var d = docs.find(function(x){ return x.id === id; });
-  if (!d || !d.fileData) { toast('No file to download', 'error'); return; }
-  var a = document.createElement('a');
-  a.href = d.fileData;
-  a.download = d.name + '.' + d.type.toLowerCase();
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+
 
 window.addEventListener('load',function(){
   function hideLoader(){
