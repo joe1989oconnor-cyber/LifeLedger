@@ -1990,6 +1990,7 @@ function enterDemo(){
   enterApp('Sarah Jones','sarah@example.com',true);
 }
 function enterDemoAs(mode){
+  if(!LANDLORD_ENABLED && mode==='landlord') mode='individual';
   currentMode=mode;
   isGuest=true; // Must be set before initData() so demo data loads
   initData();
@@ -2127,7 +2128,9 @@ var LLD_NAV='\
 <button class="nav-item" onclick="nav(\'settings\',this)"><i class="ti ti-settings"></i>Settings</button>';
 
 function applyMode(){
+  if(!LANDLORD_ENABLED && currentMode==='landlord') currentMode='individual';
   document.querySelector('.sb-nav').innerHTML=currentMode==='landlord'?LLD_NAV:IND_NAV;
+  hideLandlordUI();
   save('mode',currentMode);
   var _tb=document.querySelector('#page-moving .tab-bar');
   if(_tb)_tb.style.display=currentMode==='landlord'?'none':'';
@@ -5993,6 +5996,7 @@ function _showDocViewer(d, url) {
 
 
 window.addEventListener('load',function(){
+  try { hideLandlordUI(); } catch(e) {}
   function hideLoader(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='none';
@@ -6500,8 +6504,9 @@ function sendTenantMessage(){
 
 // ── QUIZ ──────────────────────────────────────────────────────────────────
 var _quizMode='individual';var _quizStep=0;var _quizSelections={};
-function startQuizAs(mode){_quizMode=mode;_quizStep=0;_quizSelections={};showScreen('quiz');renderQuizStep(0);}
+function startQuizAs(mode){if(!LANDLORD_ENABLED && mode==='landlord')mode='individual';_quizMode=mode;_quizStep=0;_quizSelections={};showScreen('quiz');renderQuizStep(0);}
 function selectQuizOpt(step,el,value){
+  if(!LANDLORD_ENABLED && value==='landlord') value='individual';
   _quizSelections[step]=value;if(step===0)_quizMode=value;
   el.parentNode.querySelectorAll('.quiz-opt').forEach(function(o){o.classList.remove('selected');});
   el.classList.add('selected');
@@ -6555,7 +6560,25 @@ function logoutTenant(){logOutTenant();}
 function navPortal(page){nav_portal(page);}
 
 // ── SWITCH MODE ───────────────────────────────────────────────────────────
-function switchMode(mode){currentMode=mode;save('mode',mode);applyMode();closeModal('switchModeModal');nav(mode==='landlord'?'ll-dashboard':'dashboard',null);toast('Switched to '+(mode==='landlord'?'Landlord':'Individual')+' mode','success');}
+// ── FEATURE FLAG ──────────────────────────────────────────────────────────
+// Landlord mode is hidden until the individual product is live.
+// Set to true to re-enable — no code has been removed.
+var LANDLORD_ENABLED = false;
+
+function hideLandlordUI(){
+  if (LANDLORD_ENABLED) return;
+  try {
+    // Any control that switches into / demos landlord mode
+    document.querySelectorAll('[onclick*="landlord"]').forEach(function(el){
+      el.style.display = 'none';
+    });
+    var ms = document.getElementById('modeStrip');
+    if (ms) ms.style.display = 'none';
+  } catch(e) {}
+}
+
+function switchMode(mode){
+  if(!LANDLORD_ENABLED && mode==='landlord') mode='individual';currentMode=mode;save('mode',mode);applyMode();closeModal('switchModeModal');nav(mode==='landlord'?'ll-dashboard':'dashboard',null);toast('Switched to '+(mode==='landlord'?'Landlord':'Individual')+' mode','success');}
 
 // ── MOBILE NAV ────────────────────────────────────────────────────────────
 function mobNav(which){
