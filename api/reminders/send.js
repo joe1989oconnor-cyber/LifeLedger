@@ -86,17 +86,33 @@ module.exports = async function handler(req, res) {
         const items = await collectItems(p.id);
 
         // ── Urgent one-off alerts ───────────────────────────────────────
-        const due = items.filter(it => it.windows.includes(it.days));
+        // Fire when the item is *within* a window, not only on the exact day —
+        // otherwise a missed cron run, or an item added inside the window,
+        // would never trigger a reminder at all.
+        for (const item of items) {
+          if (item.days < 0) continue;              // already passed
 
-        for (const item of due) {
-          const already = await alreadySent(p.id, item.type, item.key, item.days);
-          if (already && !dryRun) continue;
+          const windows = item.windows.slice().sort((a, b) => a - b);
+          let target = null;
+
+          for (const w of windows) {
+            if (item.days > w) continue;            // not close enough yet
+            if (await alreadySent(p.id, item.type, item.key, w)) continue;
+            target = w;
+            break;                                  // most urgent unsent window
+          }
+
+          if (target === null) continue;
 
           if (dryRun) {
-            summary.preview.push({ email: p.email, item: item.label, days: item.days });
+            summary.preview.push({ email: p.email, item: item.label, days: item.days, window: target });
           } else {
             await sendEmail(p, alertSubject(item), alertBody(p, item));
-            await logSent(p.id, item.type, item.key, item.days);
+            // Log this window *and* every wider one, so an item added late
+            // doesn't then trigger the earlier reminders it already missed.
+            for (const w of windows) {
+              if (w >= target) await logSent(p.id, item.type, item.key, w);
+            }
           }
           summary.alerts++;
         }
