@@ -7,7 +7,10 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 // Fields on the profiles table that this endpoint is allowed to read/write.
-const ALLOWED_FIELDS = ['move_from', 'move_to', 'move_date'];
+const ALLOWED_FIELDS = [
+  'move_from', 'move_to', 'move_date',
+  'reminders_enabled', 'digest_enabled'
+];
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
