@@ -3497,7 +3497,8 @@ function saveItem(){
   var n=document.getElementById('iName').value.trim();
   if(!n){toast('Please enter an item name','error');return;}
   var eid=document.getElementById('editItemId').value;
-  var item={id:eid?parseInt(eid):nextItemId++,name:n,room:document.getElementById('iRoom').value,val:parseFloat(document.getElementById('iVal').value)||0,cond:document.getElementById('iCond').value,cat:document.getElementById('iCat').value,notes:document.getElementById('iNotes').value,emoji:'\uD83D\uDCE6'};
+  var _existingI=eid?inventory.find(function(i){return i.id===parseInt(eid);}):null;
+  var item={id:eid?parseInt(eid):nextItemId++,sb_id:_existingI?_existingI.sb_id:undefined,name:n,room:document.getElementById('iRoom').value,val:parseFloat(document.getElementById('iVal').value)||0,cond:document.getElementById('iCond').value,cat:document.getElementById('iCat').value,notes:document.getElementById('iNotes').value,emoji:'\uD83D\uDCE6'};
   var emojiMap={'Electronics':'\uD83D\uDCFA','Furniture':'\uD83D\uDECB\uFE0F','Appliances':'\uD83D\uDD0C','Clothing':'\uD83D\uDC55','Jewellery':'\uD83D\uDC8E','Tools':'\uD83D\uDD28','Art / Collectibles':'\uD83C\uDDA8\uFE0F','Other':'\uD83D\uDCE6'};
   item.emoji=emojiMap[item.cat]||'\uD83D\uDCE6';
   if(eid){inventory=inventory.map(function(i){return i.id===parseInt(eid)?item:i;});}
@@ -3507,7 +3508,7 @@ function saveItem(){
   (function(){
     var token=sbToken||load('sb_token',null);
     if(!token||isGuest)return;
-    var existingSbId=eid?(inventory.find(function(i){return i.id===parseInt(eid);})||{}).sb_id:null;
+    var existingSbId=item.sb_id;
     var payload={name:item.name,room:item.room||null,val:item.val||0,serial:item.cat||null,warranty:item.cond||null,notes:item.notes||null};
     var method=existingSbId?'PUT':'POST';
     var url='/api/supabase/data?table=inventory'+(existingSbId?'&id='+existingSbId:'');
@@ -3923,7 +3924,8 @@ function saveBill(){
   var amt=document.getElementById('fAmt').value;
   if(!prov||!cat||!amt){toast('Please fill in Provider, Category and Amount','error');return;}
   var eid=document.getElementById('editingId').value;
-  var bill={id:eid?parseInt(eid):nextBillId++,prov:prov,cat:cat,amt:parseFloat(amt),freq:document.getElementById('fFreq').value,due:document.getElementById('fDue').value,status:document.getElementById('fSt').value,url:document.getElementById('fUrl').value,ref:document.getElementById('fRef').value,dd:document.getElementById('fDD').value,notes:document.getElementById('fNotes').value};
+  var _existingB=eid?bills.find(function(b){return b.id===parseInt(eid);}):null;
+  var bill={id:eid?parseInt(eid):nextBillId++,sb_id:_existingB?_existingB.sb_id:undefined,prov:prov,cat:cat,amt:parseFloat(amt),freq:document.getElementById('fFreq').value,due:document.getElementById('fDue').value,status:document.getElementById('fSt').value,url:document.getElementById('fUrl').value,ref:document.getElementById('fRef').value,dd:document.getElementById('fDD').value,notes:document.getElementById('fNotes').value};
   if(eid){bills=bills.map(function(b){return b.id===parseInt(eid)?bill:b;});}
   else{bills.push(bill);awardXP(10,'bill');}
   save('bills',bills);closeModal('billModal');
@@ -3931,7 +3933,7 @@ function saveBill(){
   (function(){
     var token=sbToken||load('sb_token',null);
     if(!token||isGuest)return;
-    var existingSbId=eid?(bills.find(function(b){return b.id===parseInt(eid);})||{}).sb_id:null;
+    var existingSbId=bill.sb_id;
     var payload={prov:bill.prov,cat:bill.cat,amt:bill.amt,freq:bill.freq,
       due:bill.due||null,status:bill.status,url:bill.url||null,
       ref:bill.ref||null,dd:bill.dd||null,notes:bill.notes||null};
@@ -5600,8 +5602,10 @@ function saveVehicle() {
   var reg = (document.getElementById('vReg').value || '').replace(/s/g,'').toUpperCase();
   if (!reg) { toast('Registration number required', 'error'); return; }
   var eid = document.getElementById('editVehicleId').value;
+  var _existingV = eid ? vehicles.find(function(v){ return v.id === parseInt(eid); }) : null;
   var vehicle = {
     id: eid ? parseInt(eid) : nextVehicleId++,
+    sb_id: _existingV ? _existingV.sb_id : undefined,
     reg: reg,
     make: document.getElementById('vMake').value || '',
     model: document.getElementById('vModel').value || '',
