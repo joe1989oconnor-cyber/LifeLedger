@@ -38,21 +38,6 @@ module.exports = async function handler(req, res) {
 
   // ── Everything else requires the cron secret ────────────────────────────
   const provided = req.headers['x-cron-secret'] || req.query.secret;
-
-  // TEMPORARY DIAGNOSTIC — remove once the cron job is working.
-  // Reports lengths only, never the values themselves.
-  if (req.query.diag === '1') {
-    return res.status(200).json({
-      cronSecretConfigured: !!CRON_SECRET,
-      cronSecretLength: CRON_SECRET ? CRON_SECRET.length : 0,
-      providedLength: provided ? String(provided).length : 0,
-      matched: provided === CRON_SECRET,
-      supabaseConfigured: !!SUPABASE_URL && !!SERVICE_KEY,
-      resendConfigured: !!RESEND_KEY,
-      appUrl: APP_URL
-    });
-  }
-
   if (!CRON_SECRET || provided !== CRON_SECRET) {
     return res.status(401).json({ error: 'Unauthorised' });
   }
