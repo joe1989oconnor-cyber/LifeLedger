@@ -1662,17 +1662,17 @@ footer a:hover{color:var(--teal);}
 <div class="page" id="page-settings">
   <div class="page-head"><div class="ph-left"><div class="page-title">Settings</div></div></div>
   <div class="settings-section"><div class="settings-section-title">Profile</div>
-    <div class="card"><div class="settings-row"><div class="u-ava" style="width:38px;height:38px;background:var(--teal-l);color:var(--teal-d);font-size:13px;font-weight:800">SJ</div><div class="sr-text"><div class="sr-label" id="sName">Sarah Jones</div><div class="sr-desc" id="sEmail">sarah@example.com &middot; <span id="planLabel">Free plan</span></div></div><button class="btn-xs bxs-teal" onclick="openEditProfile()"><i class="ti ti-edit"></i> Edit</button></div></div>
+    <div class="card"><div class="settings-row"><div class="u-ava" id="sAva" style="width:38px;height:38px;background:var(--teal-l);color:var(--teal-d);font-size:13px;font-weight:800">SJ</div><div class="sr-text"><div class="sr-label" id="sName">Sarah Jones</div><div class="sr-desc" id="sEmail">sarah@example.com &middot; <span id="planLabel">Free plan</span></div></div><button class="btn-xs bxs-teal" onclick="openEditProfile()"><i class="ti ti-edit"></i> Edit</button></div></div>
   </div>
   <div class="settings-section"><div class="settings-section-title">Preferences</div>
     <div class="card">
       <div class="settings-row"><div class="sr-icon" style="background:var(--indigo-m);color:var(--indigo)"><i class="ti ti-moon"></i></div><div class="sr-text"><div class="sr-label">Dark mode</div></div><button class="toggle" id="darkToggle" onclick="toggleDark()"></button></div>
-      <div class="settings-row"><div class="sr-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-arrows-exchange"></i></div><div class="sr-text"><div class="sr-label">Switch recommendations</div><div class="sr-desc">Show affiliate Compare &amp; Switch buttons</div></div><button class="toggle on" id="affToggle" onclick="affEnabled=!affEnabled;this.classList.toggle('on',affEnabled)"></button></div>
+      <div class="settings-row"><div class="sr-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-arrows-exchange"></i></div><div class="sr-text"><div class="sr-label">Switch recommendations</div><div class="sr-desc">Show affiliate Compare &amp; Switch buttons</div></div><button class="toggle" id="affToggle" onclick="toggleAffPref()"></button></div>
     </div>
 
   <div class="settings-section"><div class="settings-section-title">Reminders</div>
-      <div class="settings-row"><div class="sr-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-bell"></i></div><div class="sr-text"><div class="sr-label">Renewal &amp; expiry reminders</div><div class="sr-desc">Insurance renewals, MOT, road tax and document expiry</div></div><button class="toggle on" id="remindToggle" onclick="toggleReminderPref('reminders')"></button></div>
-      <div class="settings-row"><div class="sr-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-mail"></i></div><div class="sr-text"><div class="sr-label">Weekly summary</div><div class="sr-desc">A Monday email covering the next 30 days</div></div><button class="toggle on" id="digestToggle" onclick="toggleReminderPref('digest')"></button></div>
+      <div class="settings-row"><div class="sr-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-bell"></i></div><div class="sr-text"><div class="sr-label">Renewal &amp; expiry reminders</div><div class="sr-desc">Insurance renewals, MOT, road tax and document expiry</div></div><button class="toggle" id="remindToggle" onclick="toggleReminderPref('reminders')"></button></div>
+      <div class="settings-row"><div class="sr-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-mail"></i></div><div class="sr-text"><div class="sr-label">Weekly summary</div><div class="sr-desc">A Monday email covering the next 30 days</div></div><button class="toggle" id="digestToggle" onclick="toggleReminderPref('digest')"></button></div>
       <div class="rem-note">We&rsquo;ll email you 28, 10 and 2 days before an insurance renewal, 30 and 7 days before an MOT, and 14 and 3 days before a document expires. Never more than a couple of emails a week.</div>
     </div>
   </div>
@@ -1969,7 +1969,7 @@ var properties=[],tenants=[],maintenance=[],compliance=[],income=[],propInventor
 var xpPoints=0,currentRoom='All',calY=0,calM=0,wizardStep=0;
 var spendChartRef=null,pieChartRef=null,budgetDonutRef=null,calcDonutRef=null,incomeChartRef=null;
 var nextBillId=100,nextItemId=100,nextDocId=100;
-var affEnabled=true,currentMode='individual';
+var affEnabled=load('affEnabled',true),currentMode='individual';
 
 function save(k,v){if(!isGuest)try{localStorage.setItem('ll_'+k,JSON.stringify(v));}catch(e){}}
 function load(k,d){try{var r=localStorage.getItem('ll_'+k);return r?JSON.parse(r):d;}catch(e){return d;}}
@@ -2259,7 +2259,7 @@ function nav(page,el){
   var _nt=document.getElementById('topbarTitle');if(_nt)_nt.textContent=titlesMap[page]||page;
   var _ns=document.getElementById('sidebar');if(_ns)_ns.classList.remove('open');
   setMobActive(page);
-  if(page==='settings'&&typeof syncReminderToggles==='function')syncReminderToggles();
+  if(page==='settings'&&typeof renderSettings==='function')renderSettings();
   if(page==='dashboard')renderDash();
   else if(page==='bills')renderBills();
   else if(page==='compare')renderCompare();
@@ -4849,7 +4849,7 @@ function sbLoadAllData(callback) {
           digestEnabled = p.digest_enabled !== false;
           save('digest_enabled', digestEnabled);
         }
-        if (typeof syncReminderToggles === 'function') syncReminderToggles();
+        if (typeof syncSettingsToggles === 'function') syncSettingsToggles();
         // Always re-render the move header once we know the answer
         if (typeof renderMoveHeader === 'function' && document.getElementById('page-moving')) {
           renderMoveHeader();
@@ -5207,11 +5207,21 @@ function saveMoveSetup() {
 var remindersEnabled = load('reminders_enabled', true);
 var digestEnabled = load('digest_enabled', true);
 
-function syncReminderToggles(){
-  var a = document.getElementById('remindToggle');
-  if (a) a.classList.toggle('on', remindersEnabled !== false);
-  var b = document.getElementById('digestToggle');
-  if (b) b.classList.toggle('on', digestEnabled !== false);
+function syncSettingsToggles(){
+  var dt = document.getElementById('darkToggle');
+  if (dt) dt.classList.toggle('on', !!isDark);
+  var at = document.getElementById('affToggle');
+  if (at) at.classList.toggle('on', affEnabled !== false);
+  var rt = document.getElementById('remindToggle');
+  if (rt) rt.classList.toggle('on', remindersEnabled !== false);
+  var gt = document.getElementById('digestToggle');
+  if (gt) gt.classList.toggle('on', digestEnabled !== false);
+}
+
+function toggleAffPref(){
+  affEnabled = !affEnabled;
+  save('affEnabled', affEnabled);
+  syncSettingsToggles();
 }
 
 function toggleReminderPref(which){
@@ -5219,7 +5229,7 @@ function toggleReminderPref(which){
   else digestEnabled = !digestEnabled;
   save('reminders_enabled', remindersEnabled);
   save('digest_enabled', digestEnabled);
-  syncReminderToggles();
+  syncSettingsToggles();
   var _tok = sbToken || load('sb_token', null);
   if (!_tok || isGuest) { toast('Reminder settings saved', 'success'); return; }
   fetch('/api/supabase/profile', {
@@ -6697,8 +6707,10 @@ function renderSettings(){
   var sn=document.getElementById('sName');if(sn)sn.textContent=load('uname','User');
   var se=document.getElementById('sEmail');if(se)se.innerHTML=load('uemail','')+' · <span id="planLabel">'+(isPro?'Premium':'Free plan')+'</span>';
   var cm=document.getElementById('currentModeLabel');if(cm)cm.textContent=currentMode==='landlord'?'Landlord / Agency Mode':'Individual Mode';
-  var dt=document.getElementById('darkToggle');if(dt)dt.classList.toggle('on',isDark);
-  var at=document.getElementById('affToggle');if(at)at.classList.toggle('on',affEnabled);
+  var av=document.getElementById('sAva');
+  if(av){var _nm=String(load('uname','User')||'User').trim().split(/\s+/);
+    av.textContent=(((_nm[0]||'')[0]||'U')+((_nm[1]||'')[0]||'')).toUpperCase();}
+  syncSettingsToggles();
 }
 
 // ── CSV ────────────────────────────────────────────────────────────────────
