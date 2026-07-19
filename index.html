@@ -2063,6 +2063,7 @@ function enterApp(name,email,guest){
   _e=document.getElementById('userEmail');if(_e)_e.textContent=email;
   _e=document.getElementById('sName');if(_e)_e.textContent=name;
   _e=document.getElementById('sEmail');if(_e)_e.innerHTML=email+' &middot; <span id="planLabel">'+(isPro?'Premium':'Free plan')+'</span>';
+  save('uname',name);save('uemail',email);
   var ini=name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
   _e=document.getElementById('userAva');if(_e)_e.textContent=ini;
   _e=document.getElementById('guestStrip');if(_e)_e.classList.toggle('hidden',!guest);
@@ -6704,11 +6705,14 @@ function runGlobalSearch(q){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────
 function renderSettings(){
-  var sn=document.getElementById('sName');if(sn)sn.textContent=load('uname','User');
-  var se=document.getElementById('sEmail');if(se)se.innerHTML=load('uemail','')+' · <span id="planLabel">'+(isPro?'Premium':'Free plan')+'</span>';
+  var _un=load('uname','');
+  var _ue=load('uemail','');
+  var sn=document.getElementById('sName');if(sn&&_un)sn.textContent=_un;
+  var se=document.getElementById('sEmail');if(se&&_ue)se.innerHTML=_ue+' · <span id="planLabel">'+(isPro?'Premium':'Free plan')+'</span>';
   var cm=document.getElementById('currentModeLabel');if(cm)cm.textContent=currentMode==='landlord'?'Landlord / Agency Mode':'Individual Mode';
   var av=document.getElementById('sAva');
-  if(av){var _nm=String(load('uname','User')||'User').trim().split(/\s+/);
+  var _nmSrc=_un||(sn?sn.textContent:'')||'';
+  if(av&&_nmSrc){var _nm=String(_nmSrc).trim().split(/\s+/);
     av.textContent=(((_nm[0]||'')[0]||'U')+((_nm[1]||'')[0]||'')).toUpperCase();}
   syncSettingsToggles();
 }
