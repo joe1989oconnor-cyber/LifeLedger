@@ -1140,6 +1140,7 @@ footer a:hover{color:var(--teal);}
 @media(max-width:920px){
   .split-2,.split-even{grid-template-columns:1fr;}
 }
+.rem-note{font-size:12.5px;color:var(--slate-3);line-height:1.55;padding:11px 14px;background:var(--slate-8);border-radius:10px;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -1666,8 +1667,13 @@ footer a:hover{color:var(--teal);}
   <div class="settings-section"><div class="settings-section-title">Preferences</div>
     <div class="card">
       <div class="settings-row"><div class="sr-icon" style="background:var(--indigo-m);color:var(--indigo)"><i class="ti ti-moon"></i></div><div class="sr-text"><div class="sr-label">Dark mode</div></div><button class="toggle" id="darkToggle" onclick="toggleDark()"></button></div>
-      <div class="settings-row"><div class="sr-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-bell"></i></div><div class="sr-text"><div class="sr-label">Bill reminders</div><div class="sr-desc">Email before due (Premium: SMS + configurable)</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
       <div class="settings-row"><div class="sr-icon" style="background:var(--green-m);color:var(--green)"><i class="ti ti-arrows-exchange"></i></div><div class="sr-text"><div class="sr-label">Switch recommendations</div><div class="sr-desc">Show affiliate Compare &amp; Switch buttons</div></div><button class="toggle on" id="affToggle" onclick="affEnabled=!affEnabled;this.classList.toggle('on',affEnabled)"></button></div>
+    </div>
+
+  <div class="settings-section"><div class="settings-section-title">Reminders</div>
+      <div class="settings-row"><div class="sr-icon" style="background:var(--amber-m);color:var(--amber)"><i class="ti ti-bell"></i></div><div class="sr-text"><div class="sr-label">Renewal &amp; expiry reminders</div><div class="sr-desc">Insurance renewals, MOT, road tax and document expiry</div></div><button class="toggle on" id="remindToggle" onclick="toggleReminderPref('reminders')"></button></div>
+      <div class="settings-row"><div class="sr-icon" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-mail"></i></div><div class="sr-text"><div class="sr-label">Weekly summary</div><div class="sr-desc">A Monday email covering the next 30 days</div></div><button class="toggle on" id="digestToggle" onclick="toggleReminderPref('digest')"></button></div>
+      <div class="rem-note">We&rsquo;ll email you 28, 10 and 2 days before an insurance renewal, 30 and 7 days before an MOT, and 14 and 3 days before a document expires. Never more than a couple of emails a week.</div>
     </div>
   </div>
 
@@ -2253,6 +2259,7 @@ function nav(page,el){
   var _nt=document.getElementById('topbarTitle');if(_nt)_nt.textContent=titlesMap[page]||page;
   var _ns=document.getElementById('sidebar');if(_ns)_ns.classList.remove('open');
   setMobActive(page);
+  if(page==='settings'&&typeof syncReminderToggles==='function')syncReminderToggles();
   if(page==='dashboard')renderDash();
   else if(page==='bills')renderBills();
   else if(page==='compare')renderCompare();
@@ -4834,6 +4841,15 @@ function sbLoadAllData(callback) {
           // No move on record for this user — ensure it's cleared
           moveFrom=''; moveTo=''; moveDate='';
         }
+        if (p && typeof p.reminders_enabled !== 'undefined') {
+          remindersEnabled = p.reminders_enabled !== false;
+          save('reminders_enabled', remindersEnabled);
+        }
+        if (p && typeof p.digest_enabled !== 'undefined') {
+          digestEnabled = p.digest_enabled !== false;
+          save('digest_enabled', digestEnabled);
+        }
+        if (typeof syncReminderToggles === 'function') syncReminderToggles();
         // Always re-render the move header once we know the answer
         if (typeof renderMoveHeader === 'function' && document.getElementById('page-moving')) {
           renderMoveHeader();
@@ -5185,6 +5201,34 @@ function saveMoveSetup() {
   // Re-render templates with new addresses
   if (document.getElementById('templatesEl')) renderTemplates();
   toast('Move details saved ✓', 'success');
+}
+
+// ── Reminder preferences ───────────────────────────────────────────────────
+var remindersEnabled = load('reminders_enabled', true);
+var digestEnabled = load('digest_enabled', true);
+
+function syncReminderToggles(){
+  var a = document.getElementById('remindToggle');
+  if (a) a.classList.toggle('on', remindersEnabled !== false);
+  var b = document.getElementById('digestToggle');
+  if (b) b.classList.toggle('on', digestEnabled !== false);
+}
+
+function toggleReminderPref(which){
+  if (which === 'reminders') remindersEnabled = !remindersEnabled;
+  else digestEnabled = !digestEnabled;
+  save('reminders_enabled', remindersEnabled);
+  save('digest_enabled', digestEnabled);
+  syncReminderToggles();
+  var _tok = sbToken || load('sb_token', null);
+  if (!_tok || isGuest) { toast('Reminder settings saved', 'success'); return; }
+  fetch('/api/supabase/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _tok },
+    body: JSON.stringify({ reminders_enabled: remindersEnabled, digest_enabled: digestEnabled })
+  })
+  .then(function(){ toast('Reminder settings saved', 'success'); })
+  .catch(function(e){ console.error('[Supabase] Reminder prefs error:', e); toast('Could not save reminder settings', 'error'); });
 }
 
 function renderMoveHeader() {
@@ -6812,14 +6856,14 @@ function isVercelEnv() {
     save('bankConnected','1');
 
     // Fetch real accounts from our API
-    fetch('/api/bank/accounts', {credentials:'include'})
+    fetch('/api/bank?type=accounts', {credentials:'include'})
       .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function(data){
         if (data.accounts && data.accounts.length) {
           bankName = data.accounts[0].provider.display_name || 'Your Bank';
           save('bankName', bankName);
           bankAccounts = data.accounts;
-          return fetch('/api/bank/transactions?account_id=' + data.accounts[0].account_id, {credentials:'include'});
+          return fetch('/api/bank?type=transactions&account_id=' + data.accounts[0].account_id, {credentials:'include'});
         }
       })
       .then(function(r){ return r && r.ok ? r.json() : null; })
