@@ -702,7 +702,8 @@ footer a:hover{color:var(--teal);}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.au{animation:fadeUp .35s ease both;}
+.au{opacity:1;animation:fadeUp .35s ease forwards;}
+@media (prefers-reduced-motion: reduce){ .au{animation:none;opacity:1;} }
 .spin{animation:spin .8s linear infinite;}
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
@@ -2619,10 +2620,10 @@ function loadLiveRates(){
     coop:          {monthly:141, tag:'100% community-owned renewable'},
     octopus:       {monthly:138, tag:'Below price cap'},
     eon:           {monthly:152, tag:'Fixed rate, no exit fees'},
-    communityfibre:{monthly:28,  tag:'Full-fibre, no annual hike'},
-    bt:            {monthly:39,  tag:'Reliable UK network'},
-    lv:            {monthly:42,  tag:'Home + car bundle deal'},
-    admiral:       {monthly:48,  tag:'Multi-car discount'}
+    communityfibre:{monthly:22,  tag:'Full-fibre, no annual hike'},
+    bt:            {monthly:35,  tag:'500Mbps + reward card'},
+    lv:            {monthly:47,  tag:'Home + car bundle deal'},
+    admiral:       {monthly:44,  tag:'Multi-product discount'}
   };
   // UK category averages used when the user has no matching bill of their own
   var CAT_AVG={energy:152, broadband:52, insurance:58};
@@ -2790,7 +2791,7 @@ function renderDash(){
   var isOver=total>budgetTotal;
   var hero=document.getElementById('dashHero');
   if(hero){
-    hero.innerHTML='<div class="dash-hero au">'
+    hero.innerHTML='<div class="dash-hero">'
       +'<div class="dh-label">Spend this month</div>'
       +'<div class="dh-val">£'+total.toFixed(0)+'<small>of £'+budgetTotal.toFixed(0)+'</small></div>'
       +'<div class="dh-bar"><div class="dh-fill'+(isOver?' over':'')+'" style="width:'+Math.min(pct,100)+'%"></div></div>'
@@ -2958,12 +2959,12 @@ function openCmp(billId){
     html+=cmpRow('E.ON Next Fixed 12m',152.00,Math.max(0,cur-152.00),'Fixed rate','https://www.eonnext.com','eon',false);
     html+=cmpRow('British Gas Standard',158.00,Math.max(0,cur-158.00),'At price cap','https://www.britishgas.co.uk','british-gas',false);
   } else if(b.cat==='Internet & Broadband'){
-    html+=cmpRow('Community Fibre 900Mbps',28.00,Math.max(0,cur-28.00),'Full fibre','https://www.communityfibre.co.uk','communityfibre',true);
-    html+=cmpRow('BT Full Fibre 150',38.99,Math.max(0,cur-38.99),'No price hikes','https://www.bt.com','bt',false);
-    html+=cmpRow('Vodafone Pro II',34.00,Math.max(0,cur-34.00),'WiFi guarantee','https://www.vodafone.co.uk','vodafone',false);
+    html+=cmpRow('Community Fibre 150Mbps',22.00,Math.max(0,cur-22.00),'Full fibre','https://www.communityfibre.co.uk','communityfibre',true);
+    html+=cmpRow('BT Full Fibre 500',34.99,Math.max(0,cur-34.99),'500Mbps + reward card','https://www.bt.com','bt',false);
+    html+=cmpRow('Vodafone Full Fibre 150',25.00,Math.max(0,cur-25.00),'WiFi guarantee','https://www.vodafone.co.uk','vodafone',false);
   } else if(b.cat==='Home Insurance'||b.cat==='Car Insurance'||b.cat==='Van Insurance'){
-    html+=cmpRow('LV= Bundle',82.00,Math.max(0,cur-82.00),'Home+car saving','https://www.lv.com','lv',true);
-    html+=cmpRow('Admiral Multi-Car',41.50,Math.max(0,cur-41.50),'Multi-car discount','https://www.admiral.com','admiral',false);
+    html+=cmpRow('LV= Home + Car Bundle',68.00,Math.max(0,cur-68.00),'Home+car saving','https://www.lv.com','lv',true);
+    html+=cmpRow('Admiral MultiCover',44.00,Math.max(0,cur-44.00),'Multi-product discount','https://www.admiral.com','admiral',false);
     html+='<div class="cmp-item"><div class="cmp-info"><div class="cmp-name">Compare the Market</div><div class="cmp-tag"><span class="badge upcoming">Best price guarantee</span></div></div><a class="btn-switch" href="https://www.comparethemarket.com" target="_blank" rel="noopener"><i class="ti ti-arrows-exchange"></i> Compare</a></div>';
   } else {
     html='<div style="text-align:center;padding:24px;color:var(--slate-3)"><i class="ti ti-search" style="font-size:28px;display:block;margin-bottom:8px;color:var(--slate-4)"></i>No direct comparison available for <strong>'+b.cat+'</strong>.<br>Try <a href="https://www.moneysavingexpert.com" target="_blank" rel="noopener" style="color:var(--teal);font-weight:700">MoneySavingExpert →</a></div>';
@@ -3140,17 +3141,17 @@ function fetchCompareRates(cb){
       {id:'ovo',name:'OVO Energy',price:150.00,tag:'100% renewable electricity',url:'https://www.ovoenergy.com',sponsored:false}
     ],
     broadband:[
-      {id:'communityfibre',name:'Community Fibre 900Mbps',price:28.00,tag:'Full fibre',url:'https://www.communityfibre.co.uk',sponsored:true},
-      {id:'bt',name:'BT Full Fibre 150',price:38.99,tag:'No annual hikes',url:'https://www.bt.com',sponsored:false},
-      {id:'vodafone',name:'Vodafone Pro II',price:34.00,tag:'WiFi guarantee',url:'https://www.vodafone.co.uk',sponsored:false},
-      {id:'sky',name:'Sky Ultrafast Plus',price:43.99,tag:'Includes Sky TV',url:'https://www.sky.com',sponsored:false},
-      {id:'virgin',name:'Virgin M500',price:37.00,tag:'500Mbps cable',url:'https://www.virginmedia.com',sponsored:false}
+      {id:'communityfibre',name:'Community Fibre 150Mbps',price:22.00,tag:'Full fibre, no mid-contract hike',url:'https://www.communityfibre.co.uk',sponsored:true},
+      {id:'bt',name:'BT Full Fibre 500',price:34.99,tag:'500Mbps, £50 reward card',url:'https://www.bt.com',sponsored:false},
+      {id:'vodafone',name:'Vodafone Full Fibre 150',price:25.00,tag:'WiFi guarantee',url:'https://www.vodafone.co.uk',sponsored:false},
+      {id:'sky',name:'Sky Full Fibre 150',price:38.00,tag:'Includes WiFi Max',url:'https://www.sky.com',sponsored:false},
+      {id:'virgin',name:'Virgin M350',price:28.00,tag:'362Mbps cable',url:'https://www.virginmedia.com',sponsored:false}
     ],
     insurance:[
-      {id:'lv',name:'LV= Home + Car Bundle',price:82.00,tag:'Combined saving',url:'https://www.lv.com',sponsored:false},
-      {id:'admiral',name:'Admiral Multi-Car',price:76.00,tag:'Multi-car discount',url:'https://www.admiral.com',sponsored:false},
-      {id:'aviva',name:'Aviva Home & Car',price:94.00,tag:'Trusted brand',url:'https://www.aviva.co.uk',sponsored:false},
-      {id:'dl',name:'Direct Line',price:88.00,tag:'Not on comparison sites',url:'https://www.directline.com',sponsored:false}
+      {id:'lv',name:'LV= Home + Car Bundle',price:68.00,tag:'Combined home + car',url:'https://www.lv.com',sponsored:false},
+      {id:'admiral',name:'Admiral MultiCover',price:44.00,tag:'Multi-product discount',url:'https://www.admiral.com',sponsored:false},
+      {id:'aviva',name:'Aviva Home & Car',price:72.00,tag:'Bundle discount 10-15%',url:'https://www.aviva.co.uk',sponsored:false},
+      {id:'dl',name:'Direct Line',price:47.00,tag:'Not on comparison sites',url:'https://www.directline.com',sponsored:false}
     ],
     mortgage:[
       {id:'halifax',name:'Halifax 2yr Fixed',price:1095,tag:'2yr fix, 75% LTV',url:'https://www.halifax.co.uk',sponsored:true},
