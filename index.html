@@ -887,6 +887,19 @@ footer a:hover{color:var(--teal);}
 .onboard-step i{font-size:18px;color:var(--teal);display:block;margin-bottom:4px;}
 .onboard-step-lbl{font-size:11.5px;font-weight:700;color:var(--slate);}
 .onboard-step-sub{font-size:10px;color:var(--slate-3);margin-top:2px;}
+.setup-row{flex:1;min-width:130px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0;display:flex;flex-direction:column;overflow:hidden;}
+.setup-main{display:flex;align-items:center;gap:9px;padding:10px 11px;cursor:pointer;transition:background .14s;}
+.setup-main:active{background:var(--slate-8);}
+.setup-row.done{opacity:.6;}
+.setup-row.done .setup-main{cursor:default;}
+.setup-ico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.setup-txt{min-width:0;}
+.setup-lbl{font-size:12.5px;font-weight:700;color:var(--slate);}
+.setup-sub{font-size:10.5px;color:var(--slate-3);margin-top:1px;}
+.setup-cmp{border:none;border-top:1px solid var(--border);background:var(--teal-xl);color:var(--teal);font:700 11px/1 var(--font);padding:7px;cursor:pointer;}
+.setup-cmp:active{background:var(--teal-l);}
+.setup-vehicle{display:flex;align-items:center;gap:10px;margin-top:10px;background:var(--white);border:1px solid var(--teal);border-radius:10px;padding:11px 12px;cursor:pointer;}
+.setup-vehicle:active{background:var(--teal-xl);}
 
 .lp-features,.lp-pricing{padding:52px 24px;max-width:960px;margin:0 auto;}
 .lp-section-label{text-align:center;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--teal);margin-bottom:28px;}
@@ -2191,6 +2204,7 @@ function applyMode(){
   if(!LANDLORD_ENABLED && currentMode==='landlord') currentMode='individual';
   document.querySelector('.sb-nav').innerHTML=currentMode==='landlord'?LLD_NAV:IND_NAV;
   hideLandlordUI();
+  hideBankConnectUI();
   save('mode',currentMode);
   var _tb=document.querySelector('#page-moving .tab-bar');
   if(_tb)_tb.style.display=currentMode==='landlord'?'none':'';
@@ -2511,6 +2525,8 @@ var RATE_PROVIDERS=[
   // ── Energy ─────────────────────────────────────────────────────────────
   {id:'eon',name:'E.ON Next',cat:'energy',logo:'🔆',logoBg:'var(--amber-l)',logoFg:'var(--amber)',url:'https://www.eonnext.com',sponsored:false,
     awinId:'19568',awinUrl:'https://www.awin1.com/cread.php?awinmid=19568&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.eonnext.com%2F'},
+  {id:'coop',name:'Your Co-op Energy',cat:'energy',logo:'⚡',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://energy.yourcoop.coop/',sponsored:false,
+    awinId:'86971',awinUrl:null},
   {id:'msm-energy',name:'MoneySupermarket Energy',cat:'energy',logo:'💡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://www.moneysupermarket.com/gas-and-electricity/',sponsored:true,
     awinId:'6090',awinUrl:'https://www.awin1.com/cread.php?awinmid=6090&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.moneysupermarket.com%2Fgas-and-electricity%2F'},
 
@@ -2844,11 +2860,15 @@ function renderBills(){
   }
 
   // Bank connect banner
+  var _bankOn=(typeof BANK_CONNECT_ENABLED!=='undefined'&&BANK_CONNECT_ENABLED);
   var _bb=_bp.querySelector('.bank-bills-banner');
+  if(!_bankOn){ if(_bb)_bb.style.display='none'; }
+  else {
   if(!_bb){_bb=document.createElement('div');_bb.className='bank-bills-banner';if(_ph)_ph.after(_bb);}
   _bb.innerHTML=!bankConnected
     ?'<div style="background:linear-gradient(90deg,var(--teal-xl),var(--blue-l));border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:8px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#fff;font-size:16px"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate)">Import bills automatically</div><div style="font-size:11.5px;color:var(--slate-3)">Connect your bank and LifeLedger finds your bills</div></div><button onclick="nav(\'bank\',null)" style="background:var(--teal);border:none;border-radius:8px;padding:7px 13px;font:700 12px/1 var(--font);color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-link"></i> Connect bank</button></div>'
     :'<div style="background:var(--green-l);border:1.5px solid rgba(16,185,129,.2);border-radius:12px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:11px"><div style="width:34px;height:34px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-check" style="color:#fff;font-size:16px"></i></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--slate)">'+bankName+' connected</div><div style="font-size:11.5px;color:var(--slate-3)">Bills imported from your bank</div></div><button onclick="nav(\'bank\',null)" style="background:none;border:1px solid var(--green);border-radius:8px;padding:6px 12px;font:600 11.5px/1 var(--font);color:var(--green);cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-settings"></i> Manage</button></div>';
+  } // end bank-connect gate
 
   // Find or create bills card
   var _card=_bp.querySelector('.bills-card');
@@ -2936,7 +2956,7 @@ function renderCompare(){
       +'<div class="bill-suggest-meta">Savings calculated against what you actually pay: Energy £'+_bkE.toFixed(0)+'/mo · Broadband £'+_bkBB.toFixed(0)+'/mo</div></div>'
       +'<button onclick="nav(\'bank\',null)" style="background:none;border:1px solid var(--teal);border-radius:8px;padding:5px 11px;font:600 11.5px/1 var(--font);color:var(--teal);cursor:pointer;white-space:nowrap;flex-shrink:0"><i class="ti ti-link"></i> Bank settings</button>'
       +'</div>';
-  } else if(!bankConnected){
+  } else if(!bankConnected && (typeof BANK_CONNECT_ENABLED!=='undefined' && BANK_CONNECT_ENABLED)){
     bankBanner='<div class="bill-suggest" style="margin-bottom:16px">'
       +'<div style="width:36px;height:36px;border-radius:9px;background:var(--slate-7);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:var(--slate-3);font-size:18px"></i></div>'
       +'<div class="bill-suggest-info"><div class="bill-suggest-name">Connect your bank for personalised savings</div>'
@@ -6061,6 +6081,7 @@ function _showDocViewer(d, url) {
 
 window.addEventListener('load',function(){
   try { hideLandlordUI(); } catch(e) {}
+  try { hideBankConnectUI(); } catch(e) {}
   function hideLoader(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='none';
@@ -6628,6 +6649,26 @@ function navPortal(page){nav_portal(page);}
 // Landlord mode is hidden until the individual product is live.
 // Set to true to re-enable — no code has been removed.
 var LANDLORD_ENABLED = false;
+var BANK_CONNECT_ENABLED = false;
+
+function hideBankConnectUI(){
+  if (BANK_CONNECT_ENABLED) return;
+  try {
+    // Sidebar nav item + mobile "More" item both route via nav('bank',...)
+    document.querySelectorAll('[onclick*="nav(\'bank\'"]').forEach(function(el){
+      var row = el.closest ? (el.closest('.mob-more-item') || el) : el;
+      row.style.display = 'none';
+    });
+    // Any button that kicks off the connect flow
+    document.querySelectorAll('[onclick*="startBankConnect"],[onclick*="completeBankConnect"]').forEach(function(el){
+      el.style.display = 'none';
+    });
+    // Dashboard "Import bills automatically" banner, if already rendered
+    document.querySelectorAll('.bank-bills-banner').forEach(function(el){
+      el.style.display = 'none';
+    });
+  } catch(e) {}
+}
 
 function hideLandlordUI(){
   if (LANDLORD_ENABLED) return;
@@ -6735,16 +6776,85 @@ function handleCSVDrop(e){e.preventDefault();var f=e.dataTransfer&&e.dataTransfe
   if('serviceWorker' in navigator){var sw='self.addEventListener("fetch",function(e){e.respondWith(caches.match(e.request).then(function(r){return r||fetch(e.request);}));});';navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'})),{scope:'/'}).catch(function(){});}
 })();
 
+// UK smart-default renewal date for a given bill type. Returns YYYY-MM-DD.
+function smartRenewalDate(kind){
+  var now=new Date(), y=now.getFullYear();
+  if(kind==='council'){
+    // Council tax billing year starts in April; default review to next April.
+    var apr=new Date(y,3,1);
+    if(apr<now) apr=new Date(y+1,3,1);
+    return apr.toISOString().split('T')[0];
+  }
+  // Energy / insurance / broadband: fixed terms ~12 months from sign-up.
+  // Default to roughly a year out so the 28-day nudge lands sensibly.
+  var d=new Date(now); d.setFullYear(d.getFullYear()+1);
+  return d.toISOString().split('T')[0];
+}
+
+// Quick-add a common bill: open the modal pre-seeded with category + smart date.
+function quickAddBill(cat, kind){
+  if(typeof openAddBill==='function') openAddBill();
+  var setV=function(id,v){var el=document.getElementById(id); if(el)el.value=v;};
+  setV('fCat', cat);
+  setV('fDue', smartRenewalDate(kind));
+  var t=document.getElementById('billModalTitle'); if(t)t.textContent='Add '+cat;
+  var p=document.getElementById('fProv'); if(p&&p.focus)try{p.focus();}catch(e){}
+}
+
 function renderOnboarding(){
   var strip=document.getElementById('onboardStrip');
   if(!strip)return;
   if(isGuest||localStorage.getItem('ll_obDone')){strip.style.display='none';return;}
+
+  // New setup checklist: four common household bills + the vehicle magic moment.
+  var has=function(cats){return bills.some(function(b){return cats.indexOf(b.cat)>-1;});};
+  var rows=[
+    {key:'energy',   icon:'ti-bolt',           bg:'var(--amber-m)', fg:'var(--amber)', lbl:'Energy',      sub:'Gas & electricity',   done:has(['Gas','Electricity']),          add:"quickAddBill('Electricity','energy')", cmp:'energy'},
+    {key:'broadband',icon:'ti-wifi',           bg:'var(--blue-m)',  fg:'var(--blue)',  lbl:'Broadband',   sub:'Home internet',       done:has(['Internet & Broadband']),        add:"quickAddBill('Internet & Broadband','broadband')", cmp:'broadband'},
+    {key:'council',  icon:'ti-building-bank',  bg:'var(--slate-7)', fg:'var(--slate-3)',lbl:'Council tax', sub:'Usually April\u2013March', done:has(['Council Tax']),                 add:"quickAddBill('Council Tax','council')", cmp:null},
+    {key:'insurance',icon:'ti-shield-check',   bg:'var(--green-m)', fg:'var(--green)', lbl:'Insurance',   sub:'Home or car',         done:has(['Home Insurance','Car Insurance']),add:"quickAddBill('Car Insurance','insurance')", cmp:'insurance'}
+  ];
+  var doneCount=rows.filter(function(r){return r.done;}).length;
+  if(doneCount===rows.length){localStorage.setItem('ll_obDone','1');strip.style.display='none';return;}
+  strip.style.display='block';
+
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
+    +'<div style="font-size:13px;font-weight:800;color:var(--teal)"><i class="ti ti-rocket"></i> Set up your bills \u2014 '+doneCount+' of '+rows.length+'</div>'
+    +'<button onclick="localStorage.setItem(\'ll_obDone\',\'1\');document.getElementById(\'onboardStrip\').style.display=\'none\'" style="background:none;border:none;color:var(--slate-4);font-size:12px;cursor:pointer">Dismiss</button>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--slate-3);margin-top:3px">Add a bill and we\u2019ll remind you before it renews. Don\u2019t know the exact date? We\u2019ll suggest one.</div>'
+    +'<div class="onboard-steps">';
+  rows.forEach(function(r){
+    html+='<div class="setup-row'+(r.done?' done':'')+'">'
+      +'<div class="setup-main" onclick="'+(r.done?'':r.add)+'">'
+      +'<div class="setup-ico" style="background:'+r.bg+';color:'+r.fg+'"><i class="ti '+(r.done?'ti-check':r.icon)+'"></i></div>'
+      +'<div class="setup-txt"><div class="setup-lbl">'+r.lbl+'</div><div class="setup-sub">'+(r.done?'Added':r.sub)+'</div></div>'
+      +'</div>'
+      +(r.cmp&&!r.done?'<button class="setup-cmp" onclick="nav(\'compare\',null)">Compare</button>':'')
+      +'</div>';
+  });
+  html+='</div>'
+    +'<div class="setup-vehicle" onclick="nav(\'vehicle\',null)">'
+    +'<div class="setup-ico" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-car"></i></div>'
+    +'<div class="setup-txt"><div class="setup-lbl">Add a vehicle \u2014 enter your reg, we fill the rest</div>'
+    +'<div class="setup-sub">MOT and road tax dates fill in automatically from DVLA. The closest thing to auto-import.</div></div>'
+    +'<i class="ti ti-chevron-right" style="margin-left:auto;color:var(--slate-4)"></i>'
+    +'</div>';
+  strip.innerHTML=html;
+  return;
+}
+
+function renderOnboarding_LEGACY(){
+  var strip=document.getElementById('onboardStrip');
+  if(!strip)return;
+  if(isGuest||localStorage.getItem('ll_obDone')){strip.style.display='none';return;}
   var steps=[
-    {icon:'ti-building-bank',lbl:'Connect bank',sub:'Auto-import bills',done:bankConnected,fn:"nav('bank',null);renderOnboarding()"},
+    (typeof BANK_CONNECT_ENABLED!=='undefined'&&BANK_CONNECT_ENABLED)?{icon:'ti-building-bank',lbl:'Connect bank',sub:'Auto-import bills',done:bankConnected,fn:"nav('bank',null);renderOnboarding()"}:null,
     {icon:'ti-receipt-2',lbl:'Add a bill',sub:'Or add manually',done:bills.length>0,fn:'openAddBill()'},
     {icon:'ti-arrows-exchange',lbl:'Compare deals',sub:'Find savings',done:localStorage.getItem('ll_obCompare')==='1',fn:"nav('compare',null);localStorage.setItem('ll_obCompare','1');renderOnboarding()"},
     {icon:'ti-sparkles',lbl:'See your insight',sub:'Free every month',done:localStorage.getItem('ll_obInsight')==='1',fn:"nav('insights',null);localStorage.setItem('ll_obInsight','1');renderOnboarding()"}
   ];
+  steps=steps.filter(function(s){return s;});
   var allDone=steps.every(function(s){return s.done;});
   if(allDone){localStorage.setItem('ll_obDone','1');strip.style.display='none';return;}
   strip.style.display='block';
