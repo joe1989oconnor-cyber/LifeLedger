@@ -1486,7 +1486,7 @@ footer a:hover{color:var(--teal);}
 <div class="page" id="page-bills">
   <div class="page-head"><div class="ph-left"><div class="page-title">My Bills</div><div class="page-sub">All recurring payments</div></div><button class="btn-add" onclick="openAddBill()"><i class="ti ti-plus"></i> Add Bill</button></div>
   <div class="priv-notice"><i class="ti ti-shield-check"></i><div>Compare &amp; Switch links earn LifeLedger a fee from the <em>new provider only</em> &mdash; never from you. <button class="btn-xs bxs-teal" style="padding:2px 8px;font-size:10.5px" onclick="openModal('disclosureModal')">Disclosure</button></div></div>
-  <div class="card"><div class="bills-bar"><div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search bills&hellip;" id="billSearch" oninput="filterBills()"></div><select class="fsel" id="catFilter" onchange="filterBills()"><option value="">All categories</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Council Tax</option><option>Other</option></select><select class="fsel" id="stFilter" onchange="filterBills()"><option value="">All statuses</option><option value="overdue">Overdue</option><option value="soon">Due soon</option><option value="upcoming">Upcoming</option><option value="paid">Paid</option></select><button class="btn-xs bxs-gray" onclick="exportBillsCSV()"><i class="ti ti-download"></i> Export CSV</button></div><div style="overflow-x:auto"><table class="tbl" id="billsTable"></table></div></div>
+  <div class="card"><div class="bills-bar"><div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search bills&hellip;" id="billSearch" oninput="filterBills()"></div><select class="fsel" id="catFilter" onchange="filterBills()"><option value="">All categories</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Van Insurance</option><option>Council Tax</option><option>Other</option></select><select class="fsel" id="stFilter" onchange="filterBills()"><option value="">All statuses</option><option value="overdue">Overdue</option><option value="soon">Due soon</option><option value="upcoming">Upcoming</option><option value="paid">Paid</option></select><button class="btn-xs bxs-gray" onclick="exportBillsCSV()"><i class="ti ti-download"></i> Export CSV</button></div><div style="overflow-x:auto"><table class="tbl" id="billsTable"></table></div></div>
 </div>
 
 <div class="page" id="page-compare">
@@ -1772,7 +1772,7 @@ footer a:hover{color:var(--teal);}
 </div>
 
 <!-- ══════════════════ MODALS ══════════════════ -->
-<div class="modal-backdrop" id="billModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="billModalTitle">Add Bill</div><button class="modal-close" onclick="closeModal('billModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><input type="hidden" id="editingId"><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Provider *</label><input type="text" class="fi" id="fProv" placeholder="e.g. British Gas"></div><div class="fg" style="margin-bottom:0"><label class="fl">Category *</label><select class="form-select" id="fCat"><option value="">Select&hellip;</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Gas &amp; Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Council Tax</option><option>Other</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Amount (&pound;) *</label><input type="number" class="fi" id="fAmt" placeholder="0.00" step="0.01" min="0"></div><div class="fg" style="margin-bottom:0"><label class="fl">Frequency</label><select class="form-select" id="fFreq"><option>Monthly</option><option>Annual</option><option>Quarterly</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Next due date</label><input type="date" class="fi" id="fDue"></div><div class="fg" style="margin-bottom:0"><label class="fl">Status</label><select class="form-select" id="fSt"><option value="upcoming">Upcoming</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="soon">Due soon</option></select></div></div><div class="fg"><label class="fl">Provider website URL</label><input type="url" class="fi" id="fUrl" placeholder="https://"></div><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Reference</label><input type="text" class="fi" id="fRef" placeholder="Optional"></div><div class="fg" style="margin-bottom:0"><label class="fl">Direct debit?</label><select class="form-select" id="fDD"><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="fg" style="margin-top:11px"><label class="fl">Notes</label><textarea class="form-textarea" id="fNotes" rows="2"></textarea></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('billModal')">Cancel</button><button class="btn-save" onclick="saveBill()"><i class="ti ti-check"></i> Save bill</button></div></div></div>
+<div class="modal-backdrop" id="billModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="billModalTitle">Add Bill</div><button class="modal-close" onclick="closeModal('billModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><input type="hidden" id="editingId"><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Provider *</label><input type="text" class="fi" id="fProv" placeholder="e.g. British Gas"></div><div class="fg" style="margin-bottom:0"><label class="fl">Category *</label><select class="form-select" id="fCat"><option value="">Select&hellip;</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Gas &amp; Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Van Insurance</option><option>Council Tax</option><option>Other</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Amount (&pound;) *</label><input type="number" class="fi" id="fAmt" placeholder="0.00" step="0.01" min="0"></div><div class="fg" style="margin-bottom:0"><label class="fl">Frequency</label><select class="form-select" id="fFreq"><option>Monthly</option><option>Annual</option><option>Quarterly</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Next due date</label><input type="date" class="fi" id="fDue"></div><div class="fg" style="margin-bottom:0"><label class="fl">Status</label><select class="form-select" id="fSt"><option value="upcoming">Upcoming</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="soon">Due soon</option></select></div></div><div class="fg"><label class="fl">Provider website URL</label><input type="url" class="fi" id="fUrl" placeholder="https://"></div><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Reference</label><input type="text" class="fi" id="fRef" placeholder="Optional"></div><div class="fg" style="margin-bottom:0"><label class="fl">Direct debit?</label><select class="form-select" id="fDD"><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="fg" style="margin-top:11px"><label class="fl">Notes</label><textarea class="form-textarea" id="fNotes" rows="2"></textarea></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('billModal')">Cancel</button><button class="btn-save" onclick="saveBill()"><i class="ti ti-check"></i> Save bill</button></div></div></div>
 
 <div class="modal-backdrop" id="compareModal"><div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-title" id="cmpModalTitle">Compare</div><button class="modal-close" onclick="closeModal('compareModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><div class="priv-notice" style="margin-bottom:12px"><i class="ti ti-shield-check"></i><div>Fee paid by new provider only. Prices accurate June 2025.</div></div><div id="cmpModalContent"></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('compareModal')">Close</button></div></div></div>
 
@@ -2314,16 +2314,16 @@ function handleAddBtn(){
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
-var catColors={'Gas':'var(--amber-m),var(--amber)','Electricity':'var(--amber-l),var(--amber)','Gas & Electricity':'var(--amber-m),var(--amber)','Water':'var(--blue-m),var(--blue)','Internet & Broadband':'var(--indigo-m),var(--indigo)','TV & Streaming':'var(--purple-m),var(--purple)','Home Insurance':'var(--green-m),var(--green)','Car Insurance':'var(--indigo-l),var(--indigo)','Mortgage / Rent':'var(--teal-xl),var(--teal)','Council Tax':'var(--slate-7),var(--slate-3)','Other':'var(--slate-7),var(--slate-3)'};
+var catColors={'Gas':'var(--amber-m),var(--amber)','Electricity':'var(--amber-l),var(--amber)','Gas & Electricity':'var(--amber-m),var(--amber)','Water':'var(--blue-m),var(--blue)','Internet & Broadband':'var(--indigo-m),var(--indigo)','TV & Streaming':'var(--purple-m),var(--purple)','Home Insurance':'var(--green-m),var(--green)','Car Insurance':'var(--indigo-l),var(--indigo)','Van Insurance':'var(--indigo-l),var(--indigo)','Mortgage / Rent':'var(--teal-xl),var(--teal)','Council Tax':'var(--slate-7),var(--slate-3)','Other':'var(--slate-7),var(--slate-3)'};
 var condStyle={
   excellent:'background:var(--green-m);color:var(--green)',
   good:'background:var(--blue-m);color:var(--blue)',
   fair:'background:var(--amber-m);color:var(--amber)',
   poor:'background:var(--red-m);color:var(--red)'
 };
-var catEmoji={'Gas':'🔥','Electricity':'⚡','Water':'💧','Internet & Broadband':'📡','TV & Streaming':'📺','Home Insurance':'🏠','Car Insurance':'🚗','Mortgage / Rent':'🏡','Council Tax':'🏛️','Other':'📋'};
-var catColor={'Gas':'var(--amber-m)','Electricity':'var(--amber-l)','Gas & Electricity':'var(--amber-m)','Water':'var(--blue-m)','Internet & Broadband':'var(--indigo-m)','TV & Streaming':'var(--purple-m)','Home Insurance':'var(--green-m)','Car Insurance':'var(--indigo-l)','Mortgage / Rent':'var(--teal-xl)','Council Tax':'var(--slate-7)','Other':'var(--slate-7)'};
-var catFg={'Gas':'var(--amber)','Electricity':'var(--amber)','Gas & Electricity':'var(--amber)','Water':'var(--blue)','Internet & Broadband':'var(--indigo)','TV & Streaming':'var(--purple)','Home Insurance':'var(--green)','Car Insurance':'var(--indigo)','Mortgage / Rent':'var(--teal)','Council Tax':'var(--slate-3)','Other':'var(--slate-3)'};
+var catEmoji={'Gas':'🔥','Electricity':'⚡','Water':'💧','Internet & Broadband':'📡','TV & Streaming':'📺','Home Insurance':'🏠','Car Insurance':'🚗','Van Insurance':'🚐','Mortgage / Rent':'🏡','Council Tax':'🏛️','Other':'📋'};
+var catColor={'Gas':'var(--amber-m)','Electricity':'var(--amber-l)','Gas & Electricity':'var(--amber-m)','Water':'var(--blue-m)','Internet & Broadband':'var(--indigo-m)','TV & Streaming':'var(--purple-m)','Home Insurance':'var(--green-m)','Car Insurance':'var(--indigo-l)','Van Insurance':'var(--indigo-l)','Mortgage / Rent':'var(--teal-xl)','Council Tax':'var(--slate-7)','Other':'var(--slate-7)'};
+var catFg={'Gas':'var(--amber)','Electricity':'var(--amber)','Gas & Electricity':'var(--amber)','Water':'var(--blue)','Internet & Broadband':'var(--indigo)','TV & Streaming':'var(--purple)','Home Insurance':'var(--green)','Car Insurance':'var(--indigo)','Van Insurance':'var(--indigo)','Mortgage / Rent':'var(--teal)','Council Tax':'var(--slate-3)','Other':'var(--slate-3)'};
 function getCat(c){var x=catColors[c]||'#f1f5f9,#334155';var p=x.split(',');return{bg:p[0],fg:p[1]};}
 function isEnergyCat(cat){return cat==='Gas'||cat==='Electricity'||cat==='Gas & Electricity';}
 function fmtD(s){if(!s)return '';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
@@ -2331,13 +2331,13 @@ function fmtM(s){if(!s)return '';var d=new Date(s);if(isNaN(d))return s;return d
 function daysUntil(s){if(!s)return 999;var n=new Date();n.setHours(0,0,0,0);var d=new Date(s);d.setHours(0,0,0,0);return Math.round((d-n)/(86400000));}
 function sBadge(st,due){
   var cls,lbl;
-  if(st==='overdue'||daysUntil(due)<0){cls='overdue';lbl='Overdue';}
-  else if(st==='paid'){cls='paid';lbl='Paid';}
+  if(st==='paid'){cls='paid';lbl='Paid';}
+  else if(st==='overdue'||daysUntil(due)<0){cls='overdue';lbl='Overdue';}
   else if(st==='soon'||daysUntil(due)<=7){cls='soon';lbl='Due soon';}
   else{cls='upcoming';lbl='Upcoming';}
   return '<span class="badge '+cls+'">'+lbl+'</span>';
 }
-function logClick(provId, src) {
+function logClick(provId, src, fallbackUrl) {
   console.log('[Affiliate] Click:', provId, src, new Date().toISOString());
 
   // Find provider details
@@ -2349,7 +2349,7 @@ function logClick(provId, src) {
       'edf': 'https://www.edfenergy.com', 'british-gas': 'https://www.britishgas.co.uk',
       'aviva': 'https://www.aviva.co.uk', 'direct-line': 'https://www.directline.com'
     };
-    var url = allProviders[provId] || '#';
+    var url = allProviders[provId] || fallbackUrl || '#';
     window.open(url, '_blank', 'noopener');
     return;
   }
@@ -2478,20 +2478,20 @@ function billRow(b,mini){
   var cc=getCat(b.cat);var mn=parseFloat(b.amt)||0;
   var em=catEmoji[b.cat]||'\uD83D\uDCCB';
   // Determine best live saving for this bill's category
-  var switchableCats=['Gas','Electricity','Gas & Electricity','Internet & Broadband','Home Insurance','Car Insurance','Mortgage / Rent'];
+  var switchableCats=['Gas','Electricity','Gas & Electricity','Internet & Broadband','Home Insurance','Car Insurance','Van Insurance','Mortgage / Rent'];
   var isSwitchable=switchableCats.indexOf(b.cat)>-1;
   var bestSaving=0;var bestProvider='';
   if(isSwitchable&&liveRates&&liveRates.length){
     liveRates.forEach(function(r){
       var matches=(isEnergyCat(b.cat))&&r.cat==='energy';
       if(!matches)matches=b.cat==='Internet & Broadband'&&r.cat==='broadband';
-      if(!matches)matches=(b.cat==='Home Insurance'||b.cat==='Car Insurance')&&r.cat==='insurance';
+      if(!matches)matches=(b.cat==='Home Insurance'||b.cat==='Car Insurance'||b.cat==='Van Insurance')&&r.cat==='insurance';
       if(matches&&r.saving&&r.saving>bestSaving){bestSaving=r.saving;bestProvider=r.name;}
     });
   }
   // Fallback savings if live rates not yet loaded
   if(isSwitchable&&!bestSaving){
-    var fallback={'Gas':15,'Electricity':28,'Internet & Broadband':18,'Home Insurance':22,'Car Insurance':19,'Mortgage / Rent':0};
+    var fallback={'Gas':15,'Electricity':28,'Internet & Broadband':18,'Home Insurance':22,'Car Insurance':19,'Van Insurance':19,'Mortgage / Rent':0};
     bestSaving=fallback[b.cat]||0;
   }
   var switchHtml='';
@@ -2596,8 +2596,8 @@ function loadLiveRates(){
   // feed (Awin product feed / comparison partner) when one is available.
   var CURATED={
     coop:          {monthly:141, tag:'100% community-owned renewable'},
-    octopus:       {monthly:96,  tag:'Tracker tariff, no exit fees'},
-    eon:           {monthly:108, tag:'Fixed rate, no exit fees'},
+    octopus:       {monthly:138, tag:'Below price cap'},
+    eon:           {monthly:152, tag:'Fixed rate, no exit fees'},
     communityfibre:{monthly:28,  tag:'Full-fibre, no annual hike'},
     bt:            {monthly:39,  tag:'Reliable UK network'},
     lv:            {monthly:42,  tag:'Home + car bundle deal'},
@@ -2612,7 +2612,7 @@ function loadLiveRates(){
     var userCatBill=bills.filter(function(b){
       if(p.cat==='energy')return isEnergyCat(b.cat);
       if(p.cat==='broadband')return b.cat==='Internet & Broadband';
-      if(p.cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance';
+      if(p.cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance'||b.cat==='Van Insurance';
       return false;
     }).reduce(function(a,b){return a+(parseFloat(b.amt)||0);},0);
     var baseline=userCatBill>0?userCatBill:(CAT_AVG[p.cat]||0);
@@ -2633,7 +2633,7 @@ function renderRatesBanner(){
     return bills.some(function(b){
       if(cat==='energy')return isEnergyCat(b.cat);
       if(cat==='broadband')return b.cat==='Internet & Broadband';
-      if(cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance';
+      if(cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance'||b.cat==='Van Insurance';
       return false;
     });
   }
@@ -2669,7 +2669,7 @@ function renderRatesBanner(){
           ?'<div class="rate-saving"><i class="ti ti-trending-down"></i> Save &pound;'+r.saving+'/mo vs your bill</div>'
           :'')
       +'</div>'
-      +'<a class="btn-rate-switch" href="'+r.url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'dash-rates\')">'
+      +'<a class="btn-rate-switch" href="'+r.url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'dash-rates\',\''+r.url+'\')">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch':'<i class="ti ti-arrow-right"></i> View')
       +'</a>'
       +'</div>';
@@ -2704,7 +2704,7 @@ function renderDash(){
     var mo=b.freq==='weekly'?parseFloat(b.amt)*4.33:b.freq==='fortnightly'?parseFloat(b.amt)*2.17:b.freq==='annual'?parseFloat(b.amt)/12:parseFloat(b.amt)||0;
     return a+mo;
   },0);
-  var overdue=bills.filter(function(b){return b.status==='overdue'||daysUntil(b.due)<0;});
+  var overdue=bills.filter(function(b){return b.status!=='paid'&&(b.status==='overdue'||daysUntil(b.due)<0);});
   var soon=bills.filter(function(b){return (b.status==='soon'||(daysUntil(b.due)>=0&&daysUntil(b.due)<=7))&&b.status!=='paid'&&b.status!=='overdue';});
   var totalSave=liveRates.reduce(function(a,r){return a+(r.saving||0);},0);
   var invVal=inventory.reduce(function(a,i){return a+(parseFloat(i.val)||0);},0);
@@ -2926,14 +2926,14 @@ function openCmp(billId){
   var html='<div style="background:var(--slate-7);border-radius:9px;padding:11px 14px;margin-bottom:14px;font-size:12.5px"><span style="font-weight:700">Current bill: </span>'+b.prov+' &mdash; £'+cur.toFixed(2)+'/mo</div>';
   if(isEnergyCat(b.cat)){
     html+=cmpRow('Your Co-op Energy — Community Power',141.50,Math.max(0,cur-141.50),'100% community-owned','https://energy.yourcoop.coop/','coop',true);
-    html+=cmpRow('Octopus Tracker',96.50,Math.max(0,cur-96.50),'#1 Rated 2025','https://octopus.energy','octopus',false);
-    html+=cmpRow('E.ON Next Fixed 12m',108.00,Math.max(0,cur-108.00),'Fixed rate','https://www.eonenergy.com','eon',false);
-    html+=cmpRow('British Gas Standard',120.00,Math.max(0,cur-120.00),'No exit fees','https://www.britishgas.co.uk','bg',false);
+    html+=cmpRow('Octopus Tracker',138.00,Math.max(0,cur-138.00),'Below price cap','https://octopus.energy','octopus',false);
+    html+=cmpRow('E.ON Next Fixed 12m',152.00,Math.max(0,cur-152.00),'Fixed rate','https://www.eonnext.com','eon',false);
+    html+=cmpRow('British Gas Standard',158.00,Math.max(0,cur-158.00),'At price cap','https://www.britishgas.co.uk','british-gas',false);
   } else if(b.cat==='Internet & Broadband'){
-    html+=cmpRow('Community Fibre 900Mbps',28.00,Math.max(0,cur-28.00),'Full fibre','https://www.communityfibre.co.uk','cf',true);
+    html+=cmpRow('Community Fibre 900Mbps',28.00,Math.max(0,cur-28.00),'Full fibre','https://www.communityfibre.co.uk','communityfibre',true);
     html+=cmpRow('BT Full Fibre 150',38.99,Math.max(0,cur-38.99),'No price hikes','https://www.bt.com','bt',false);
-    html+=cmpRow('Vodafone Pro II',34.00,Math.max(0,cur-34.00),'WiFi guarantee','https://www.vodafone.co.uk','voda',false);
-  } else if(b.cat==='Home Insurance'||b.cat==='Car Insurance'){
+    html+=cmpRow('Vodafone Pro II',34.00,Math.max(0,cur-34.00),'WiFi guarantee','https://www.vodafone.co.uk','vodafone',false);
+  } else if(b.cat==='Home Insurance'||b.cat==='Car Insurance'||b.cat==='Van Insurance'){
     html+=cmpRow('LV= Bundle',82.00,Math.max(0,cur-82.00),'Home+car saving','https://www.lv.com','lv',true);
     html+=cmpRow('Admiral Multi-Car',41.50,Math.max(0,cur-41.50),'Multi-car discount','https://www.admiral.com','admiral',false);
     html+='<div class="cmp-item"><div class="cmp-info"><div class="cmp-name">Compare the Market</div><div class="cmp-tag"><span class="badge upcoming">Best price guarantee</span></div></div><a class="btn-switch" href="https://www.comparethemarket.com" target="_blank" rel="noopener"><i class="ti ti-arrows-exchange"></i> Compare</a></div>';
@@ -2946,7 +2946,7 @@ function openCmp(billId){
 function cmpRow(name,price,saving,badge,url,prov,sponsored){
   var sp=sponsored?'<span style="font-size:9px;background:var(--gold-m);color:var(--gold);padding:1px 5px;border-radius:3px;font-weight:800">PARTNER</span>':'';
   var sv=saving?'<div class="cmp-saving"><i class="ti ti-trend-up"></i> Save \u00a3'+saving+'/mo vs current</div>':'<div style="font-size:11px;color:var(--slate-3)">Same as current price</div>';
-  return '<div class="cmp-item"><div class="cmp-info"><div class="cmp-name">'+name+' '+sp+'</div><div class="cmp-tag"><span class="badge upcoming">'+badge+'</span></div>'+sv+'</div><div style="text-align:right"><div class="cmp-price">\u00a3'+price.toFixed(2)+'/mo</div><a class="btn-switch" href="'+url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+prov+'\',\'compare\')"><i class="ti ti-arrows-exchange"></i> Switch <span class="sw-save">View deal</span></a></div></div>';
+  return '<div class="cmp-item"><div class="cmp-info"><div class="cmp-name">'+name+' '+sp+'</div><div class="cmp-tag"><span class="badge upcoming">'+badge+'</span></div>'+sv+'</div><div style="text-align:right"><div class="cmp-price">\u00a3'+price.toFixed(2)+'/mo</div><a class="btn-switch" href="'+url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+prov+'\',\'compare\',\''+url+'\')"><i class="ti ti-arrows-exchange"></i> Switch <span class="sw-save">View deal</span></a></div></div>';
 }
 function renderCompare(){
   var el=document.getElementById('compareContent');if(!el)return;
@@ -2998,7 +2998,7 @@ function renderCompare(){
       html+='</div>';
     }
     // ── Insurance ─────────────────────────────────────────────────────
-    var insBills=bills.filter(function(b){return b.cat==='Home Insurance'||b.cat==='Car Insurance';});
+    var insBills=bills.filter(function(b){return b.cat==='Home Insurance'||b.cat==='Car Insurance'||b.cat==='Van Insurance';});
     if(insBills.length){
       var cur3=insBills.reduce(function(a,b){return a+(parseFloat(b.amt)||0);},0);
       var ins=rates.insurance||[];
@@ -3080,7 +3080,7 @@ function cmpRowV2(r,curAmt,curProv){
   var style=getProviderStyle(r);
   var switchBtn=isCurrent
     ?'<span style="font-size:11px;color:var(--slate-3);font-weight:600">Current plan</span>'
-    :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="#" onclick="logClick(\''+r.id+'\',\'compare\');return false;">'
+    :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="'+(r.url||'#')+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'compare\',\''+(r.url||'')+'\');return false;">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch &amp; save £'+saving+'/mo':'<i class="ti ti-arrow-right"></i> View deal')
       +'</a>';
   return '<div class="cmp-item" style="'+(isCurrent?'background:var(--slate-8)':'')+'">'
@@ -3105,21 +3105,21 @@ function fetchCompareRates(cb){
   cb({
     energy:[
       {id:'coop',name:'Your Co-op Energy — Community Power',price:141.50,tag:'100% community-owned renewable',url:'https://energy.yourcoop.coop/',sponsored:true},
-      {id:'octopus',name:'Octopus Tracker',price:96.50,tag:'Tracker tariff',url:'https://octopus.energy',sponsored:false},
-      {id:'eon',name:'E.ON Next Fixed 12m',price:108.00,tag:'Fixed rate',url:'https://www.eonenergy.com',sponsored:false},
-      {id:'bg',name:'British Gas Standard',price:120.00,tag:'No exit fees',url:'https://www.britishgas.co.uk',sponsored:false},
-      {id:'edf',name:'EDF Blue Tariff',price:113.00,tag:'Smart meter bonus',url:'https://www.edfenergy.com',sponsored:false},
-      {id:'ovo',name:'OVO Energy',price:104.00,tag:'100% renewable electricity',url:'https://www.ovoenergy.com',sponsored:false}
+      {id:'octopus',name:'Octopus Tracker',price:138.00,tag:'Below price cap',url:'https://octopus.energy',sponsored:false},
+      {id:'eon',name:'E.ON Next Fixed 12m',price:152.00,tag:'Fixed rate',url:'https://www.eonnext.com',sponsored:false},
+      {id:'british-gas',name:'British Gas Standard',price:158.00,tag:'At price cap',url:'https://www.britishgas.co.uk',sponsored:false},
+      {id:'edf',name:'EDF Blue Tariff',price:154.00,tag:'Smart meter bonus',url:'https://www.edfenergy.com',sponsored:false},
+      {id:'ovo',name:'OVO Energy',price:150.00,tag:'100% renewable electricity',url:'https://www.ovoenergy.com',sponsored:false}
     ],
     broadband:[
-      {id:'cf',name:'Community Fibre 900Mbps',price:28.00,tag:'Full fibre',url:'https://www.communityfibre.co.uk',sponsored:true},
+      {id:'communityfibre',name:'Community Fibre 900Mbps',price:28.00,tag:'Full fibre',url:'https://www.communityfibre.co.uk',sponsored:true},
       {id:'bt',name:'BT Full Fibre 150',price:38.99,tag:'No annual hikes',url:'https://www.bt.com',sponsored:false},
-      {id:'voda',name:'Vodafone Pro II',price:34.00,tag:'WiFi guarantee',url:'https://www.vodafone.co.uk',sponsored:false},
+      {id:'vodafone',name:'Vodafone Pro II',price:34.00,tag:'WiFi guarantee',url:'https://www.vodafone.co.uk',sponsored:false},
       {id:'sky',name:'Sky Ultrafast Plus',price:43.99,tag:'Includes Sky TV',url:'https://www.sky.com',sponsored:false},
       {id:'virgin',name:'Virgin M500',price:37.00,tag:'500Mbps cable',url:'https://www.virginmedia.com',sponsored:false}
     ],
     insurance:[
-      {id:'lv',name:'LV= Home + Car Bundle',price:82.00,tag:'Combined saving',url:'https://www.lv.com',sponsored:true},
+      {id:'lv',name:'LV= Home + Car Bundle',price:82.00,tag:'Combined saving',url:'https://www.lv.com',sponsored:false},
       {id:'admiral',name:'Admiral Multi-Car',price:76.00,tag:'Multi-car discount',url:'https://www.admiral.com',sponsored:false},
       {id:'aviva',name:'Aviva Home & Car',price:94.00,tag:'Trusted brand',url:'https://www.aviva.co.uk',sponsored:false},
       {id:'dl',name:'Direct Line',price:88.00,tag:'Not on comparison sites',url:'https://www.directline.com',sponsored:false}
@@ -3144,7 +3144,7 @@ function renderBudget(){
 
   // Calculate spend per category from bills (or show examples)
   // Ensure all standard categories exist
-  var allCats=['Mortgage / Rent','Gas','Electricity','Water','Internet & Broadband','TV & Streaming','Home Insurance','Car Insurance','Council Tax','Other'];
+  var allCats=['Mortgage / Rent','Gas','Electricity','Water','Internet & Broadband','TV & Streaming','Home Insurance','Car Insurance','Van Insurance','Council Tax','Other'];
   allCats.forEach(function(cat){if(budgets[cat]===undefined)budgets[cat]=0;});
   var cats=allCats;
   var spend={};
@@ -4703,7 +4703,7 @@ function renderAll(){
   // Pre-render budget modal body
   var bm=document.getElementById('budgetModalBody');
   // Ensure all default categories show in modal
-  var allCats=['Mortgage / Rent','Gas','Electricity','Water','Internet & Broadband','TV & Streaming','Home Insurance','Car Insurance','Council Tax','Other'];
+  var allCats=['Mortgage / Rent','Gas','Electricity','Water','Internet & Broadband','TV & Streaming','Home Insurance','Car Insurance','Van Insurance','Council Tax','Other'];
   allCats.forEach(function(cat){if(budgets[cat]===undefined)budgets[cat]=0;});
   if(bm){bm.innerHTML=allCats.map(function(cat){
     var em=catEmoji[cat]||'';
@@ -6818,7 +6818,7 @@ function renderOnboarding(){
     {key:'energy',   icon:'ti-bolt',           bg:'var(--amber-m)', fg:'var(--amber)', lbl:'Energy',      sub:'Gas & electricity',   done:has(['Gas','Electricity']),          add:"quickAddBill('Electricity','energy')", cmp:'energy'},
     {key:'broadband',icon:'ti-wifi',           bg:'var(--blue-m)',  fg:'var(--blue)',  lbl:'Broadband',   sub:'Home internet',       done:has(['Internet & Broadband']),        add:"quickAddBill('Internet & Broadband','broadband')", cmp:'broadband'},
     {key:'council',  icon:'ti-building-bank',  bg:'var(--slate-7)', fg:'var(--slate-3)',lbl:'Council tax', sub:'Usually April\u2013March', done:has(['Council Tax']),                 add:"quickAddBill('Council Tax','council')", cmp:null},
-    {key:'insurance',icon:'ti-shield-check',   bg:'var(--green-m)', fg:'var(--green)', lbl:'Insurance',   sub:'Home or car',         done:has(['Home Insurance','Car Insurance']),add:"quickAddBill('Car Insurance','insurance')", cmp:'insurance'}
+    {key:'insurance',icon:'ti-shield-check',   bg:'var(--green-m)', fg:'var(--green)', lbl:'Insurance',   sub:'Home or car',         done:has(['Home Insurance','Car Insurance','Van Insurance']),add:"quickAddBill('Car Insurance','insurance')", cmp:'insurance'}
   ];
   var doneCount=rows.filter(function(r){return r.done;}).length;
   if(doneCount===rows.length){localStorage.setItem('ll_obDone','1');strip.style.display='none';return;}
