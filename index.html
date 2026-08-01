@@ -1478,7 +1478,7 @@ footer a:hover{color:var(--teal);}
     <div class="rates-ft"><span>Referral fee paid by new provider only. <button class="btn-xs bxs-gray" style="padding:2px 8px;font-size:10px" onclick="openModal('disclosureModal')">Full disclosure</button></span><button class="btn-xs bxs-teal" onclick="nav('compare',null)">All comparisons <i class="ti ti-arrow-right"></i></button></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 270px;gap:13px;margin-bottom:14px" id="dashChartGrid">
-    <div class="card au"><div class="card-head"><div><div class="card-title">Monthly Spend</div><div class="card-sub">Last 6 months</div></div><button class="btn-xs bxs-gray" onclick="nav('budget',null)"><i class="ti ti-chart-pie-2"></i> Budget</button></div><div class="card-body"><div style="height:170px;position:relative"><canvas id="spendChart"></canvas></div></div></div>
+    <div class="card au"><div class="card-head"><div><div class="card-title">Monthly Spend</div><div class="card-sub">Current monthly total by category</div></div><button class="btn-xs bxs-gray" onclick="nav('budget',null)"><i class="ti ti-chart-pie-2"></i> Budget</button></div><div class="card-body"><div style="height:170px;position:relative"><canvas id="spendChart"></canvas></div></div></div>
     <div class="card au"><div class="card-head"><div class="card-title">By Category</div></div><div class="card-body"><div style="height:115px;position:relative"><canvas id="pieChart"></canvas></div><div id="pieLegend" style="margin-top:9px"></div></div></div>
   </div>
   <div class="card au" id="dashUpcoming"><div class="card-head"><div><div class="card-title">Upcoming Payments</div><div class="card-sub">Sorted by due date</div></div><div style="display:flex;gap:6px"><button class="btn-xs bxs-gray" onclick="nav('bills',null)">All bills <i class="ti ti-arrow-right"></i></button><button class="btn-xs bxs-teal" onclick="openAddBill()"><i class="ti ti-plus"></i> Add</button></div></div><div style="overflow-x:auto"><table class="tbl" id="dashTable"></table></div></div>
@@ -2867,6 +2867,35 @@ function renderDash(){
         +'<span style="flex:1;color:var(--slate-2)">'+k+'</span>'
         +'<span style="font-weight:700">£'+catSpend[k].toFixed(0)+'</span></div>';
     }).join('');
+  })();
+
+  // Monthly spend bar chart (current monthly total by category)
+  (function(){
+    var sc=document.getElementById('spendChart');
+    if(!sc||!window.Chart)return;
+    if(window._spendChartRef){try{window._spendChartRef.destroy();}catch(e){}}
+    var catSpend={};
+    bills.forEach(function(b){
+      var amt=parseFloat(b.amt)||0;
+      var f=(b.freq||'monthly').toLowerCase();
+      var mo=f==='weekly'?amt*4.33:f==='fortnightly'?amt*2.17:f==='quarterly'?amt/3
+        :(f==='annual'||f==='annually'||f==='yearly')?amt/12:amt;
+      if(isNaN(mo))mo=0;
+      var key=b.cat||'Other';
+      catSpend[key]=(catSpend[key]||0)+mo;
+    });
+    var cats=Object.keys(catSpend).filter(function(k){return catSpend[k]>0;})
+      .sort(function(a,b){return catSpend[b]-catSpend[a];}).slice(0,6);
+    if(!cats.length)return;
+    window._spendChartRef=new Chart(sc,{
+      type:'bar',
+      data:{labels:cats,datasets:[{data:cats.map(function(k){return Math.round(catSpend[k]);}),
+        backgroundColor:'#0d9488',borderRadius:6,maxBarThickness:34}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return '\u00a3'+ctx.parsed.y+'/mo';}}}},
+        scales:{y:{beginAtZero:true,ticks:{callback:function(v){return '\u00a3'+v;}}},
+          x:{ticks:{font:{size:10}}}}}
+    });
   })();
 
   loadLiveRates();
