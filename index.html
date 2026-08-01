@@ -1772,7 +1772,7 @@ footer a:hover{color:var(--teal);}
 </div>
 
 <!-- ══════════════════ MODALS ══════════════════ -->
-<div class="modal-backdrop" id="billModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="billModalTitle">Add Bill</div><button class="modal-close" onclick="closeModal('billModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><input type="hidden" id="editingId"><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Provider *</label><input type="text" class="fi" id="fProv" placeholder="e.g. British Gas"></div><div class="fg" style="margin-bottom:0"><label class="fl">Category *</label><select class="form-select" id="fCat"><option value="">Select&hellip;</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Council Tax</option><option>Other</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Amount (&pound;) *</label><input type="number" class="fi" id="fAmt" placeholder="0.00" step="0.01" min="0"></div><div class="fg" style="margin-bottom:0"><label class="fl">Frequency</label><select class="form-select" id="fFreq"><option>Monthly</option><option>Annual</option><option>Quarterly</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Next due date</label><input type="date" class="fi" id="fDue"></div><div class="fg" style="margin-bottom:0"><label class="fl">Status</label><select class="form-select" id="fSt"><option value="upcoming">Upcoming</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="soon">Due soon</option></select></div></div><div class="fg"><label class="fl">Provider website URL</label><input type="url" class="fi" id="fUrl" placeholder="https://"></div><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Reference</label><input type="text" class="fi" id="fRef" placeholder="Optional"></div><div class="fg" style="margin-bottom:0"><label class="fl">Direct debit?</label><select class="form-select" id="fDD"><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="fg" style="margin-top:11px"><label class="fl">Notes</label><textarea class="form-textarea" id="fNotes" rows="2"></textarea></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('billModal')">Cancel</button><button class="btn-save" onclick="saveBill()"><i class="ti ti-check"></i> Save bill</button></div></div></div>
+<div class="modal-backdrop" id="billModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="billModalTitle">Add Bill</div><button class="modal-close" onclick="closeModal('billModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><input type="hidden" id="editingId"><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Provider *</label><input type="text" class="fi" id="fProv" placeholder="e.g. British Gas"></div><div class="fg" style="margin-bottom:0"><label class="fl">Category *</label><select class="form-select" id="fCat"><option value="">Select&hellip;</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Gas &amp; Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Council Tax</option><option>Other</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Amount (&pound;) *</label><input type="number" class="fi" id="fAmt" placeholder="0.00" step="0.01" min="0"></div><div class="fg" style="margin-bottom:0"><label class="fl">Frequency</label><select class="form-select" id="fFreq"><option>Monthly</option><option>Annual</option><option>Quarterly</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Next due date</label><input type="date" class="fi" id="fDue"></div><div class="fg" style="margin-bottom:0"><label class="fl">Status</label><select class="form-select" id="fSt"><option value="upcoming">Upcoming</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="soon">Due soon</option></select></div></div><div class="fg"><label class="fl">Provider website URL</label><input type="url" class="fi" id="fUrl" placeholder="https://"></div><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Reference</label><input type="text" class="fi" id="fRef" placeholder="Optional"></div><div class="fg" style="margin-bottom:0"><label class="fl">Direct debit?</label><select class="form-select" id="fDD"><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="fg" style="margin-top:11px"><label class="fl">Notes</label><textarea class="form-textarea" id="fNotes" rows="2"></textarea></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('billModal')">Cancel</button><button class="btn-save" onclick="saveBill()"><i class="ti ti-check"></i> Save bill</button></div></div></div>
 
 <div class="modal-backdrop" id="compareModal"><div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-title" id="cmpModalTitle">Compare</div><button class="modal-close" onclick="closeModal('compareModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><div class="priv-notice" style="margin-bottom:12px"><i class="ti ti-shield-check"></i><div>Fee paid by new provider only. Prices accurate June 2025.</div></div><div id="cmpModalContent"></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('compareModal')">Close</button></div></div></div>
 
@@ -2314,7 +2314,7 @@ function handleAddBtn(){
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
-var catColors={'Gas':'var(--amber-m),var(--amber)','Electricity':'var(--amber-l),var(--amber)','Water':'var(--blue-m),var(--blue)','Internet & Broadband':'var(--indigo-m),var(--indigo)','TV & Streaming':'var(--purple-m),var(--purple)','Home Insurance':'var(--green-m),var(--green)','Car Insurance':'var(--indigo-l),var(--indigo)','Mortgage / Rent':'var(--teal-xl),var(--teal)','Council Tax':'var(--slate-7),var(--slate-3)','Other':'var(--slate-7),var(--slate-3)'};
+var catColors={'Gas':'var(--amber-m),var(--amber)','Electricity':'var(--amber-l),var(--amber)','Gas & Electricity':'var(--amber-m),var(--amber)','Water':'var(--blue-m),var(--blue)','Internet & Broadband':'var(--indigo-m),var(--indigo)','TV & Streaming':'var(--purple-m),var(--purple)','Home Insurance':'var(--green-m),var(--green)','Car Insurance':'var(--indigo-l),var(--indigo)','Mortgage / Rent':'var(--teal-xl),var(--teal)','Council Tax':'var(--slate-7),var(--slate-3)','Other':'var(--slate-7),var(--slate-3)'};
 var condStyle={
   excellent:'background:var(--green-m);color:var(--green)',
   good:'background:var(--blue-m);color:var(--blue)',
@@ -2322,8 +2322,8 @@ var condStyle={
   poor:'background:var(--red-m);color:var(--red)'
 };
 var catEmoji={'Gas':'🔥','Electricity':'⚡','Water':'💧','Internet & Broadband':'📡','TV & Streaming':'📺','Home Insurance':'🏠','Car Insurance':'🚗','Mortgage / Rent':'🏡','Council Tax':'🏛️','Other':'📋'};
-var catColor={'Gas':'var(--amber-m)','Electricity':'var(--amber-l)','Water':'var(--blue-m)','Internet & Broadband':'var(--indigo-m)','TV & Streaming':'var(--purple-m)','Home Insurance':'var(--green-m)','Car Insurance':'var(--indigo-l)','Mortgage / Rent':'var(--teal-xl)','Council Tax':'var(--slate-7)','Other':'var(--slate-7)'};
-var catFg={'Gas':'var(--amber)','Electricity':'var(--amber)','Water':'var(--blue)','Internet & Broadband':'var(--indigo)','TV & Streaming':'var(--purple)','Home Insurance':'var(--green)','Car Insurance':'var(--indigo)','Mortgage / Rent':'var(--teal)','Council Tax':'var(--slate-3)','Other':'var(--slate-3)'};
+var catColor={'Gas':'var(--amber-m)','Electricity':'var(--amber-l)','Gas & Electricity':'var(--amber-m)','Water':'var(--blue-m)','Internet & Broadband':'var(--indigo-m)','TV & Streaming':'var(--purple-m)','Home Insurance':'var(--green-m)','Car Insurance':'var(--indigo-l)','Mortgage / Rent':'var(--teal-xl)','Council Tax':'var(--slate-7)','Other':'var(--slate-7)'};
+var catFg={'Gas':'var(--amber)','Electricity':'var(--amber)','Gas & Electricity':'var(--amber)','Water':'var(--blue)','Internet & Broadband':'var(--indigo)','TV & Streaming':'var(--purple)','Home Insurance':'var(--green)','Car Insurance':'var(--indigo)','Mortgage / Rent':'var(--teal)','Council Tax':'var(--slate-3)','Other':'var(--slate-3)'};
 function getCat(c){var x=catColors[c]||'#f1f5f9,#334155';var p=x.split(',');return{bg:p[0],fg:p[1]};}
 function fmtD(s){if(!s)return '';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function fmtM(s){if(!s)return '';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
@@ -2477,12 +2477,13 @@ function billRow(b,mini){
   var cc=getCat(b.cat);var mn=parseFloat(b.amt)||0;
   var em=catEmoji[b.cat]||'\uD83D\uDCCB';
   // Determine best live saving for this bill's category
-  var switchableCats=['Gas','Electricity','Internet & Broadband','Home Insurance','Car Insurance','Mortgage / Rent'];
+  function isEnergyCat(cat){return cat==='Gas'||cat==='Electricity'||cat==='Gas & Electricity';}
+  var switchableCats=['Gas','Electricity','Gas & Electricity','Internet & Broadband','Home Insurance','Car Insurance','Mortgage / Rent'];
   var isSwitchable=switchableCats.indexOf(b.cat)>-1;
   var bestSaving=0;var bestProvider='';
   if(isSwitchable&&liveRates&&liveRates.length){
     liveRates.forEach(function(r){
-      var matches=(b.cat==='Gas'||b.cat==='Electricity')&&r.cat==='energy';
+      var matches=(isEnergyCat(b.cat))&&r.cat==='energy';
       if(!matches)matches=b.cat==='Internet & Broadband'&&r.cat==='broadband';
       if(!matches)matches=(b.cat==='Home Insurance'||b.cat==='Car Insurance')&&r.cat==='insurance';
       if(matches&&r.saving&&r.saving>bestSaving){bestSaving=r.saving;bestProvider=r.name;}
@@ -2608,7 +2609,7 @@ function loadLiveRates(){
     var f=CURATED[p.id]||{monthly:0,tag:''};
     // Compare against the user's own bills where we can, otherwise the UK average
     var userCatBill=bills.filter(function(b){
-      if(p.cat==='energy')return b.cat==='Gas'||b.cat==='Electricity';
+      if(p.cat==='energy')return isEnergyCat(b.cat);
       if(p.cat==='broadband')return b.cat==='Internet & Broadband';
       if(p.cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance';
       return false;
@@ -2629,7 +2630,7 @@ function renderRatesBanner(){
 
   function userHasBillIn(cat){
     return bills.some(function(b){
-      if(cat==='energy')return b.cat==='Gas'||b.cat==='Electricity';
+      if(cat==='energy')return isEnergyCat(b.cat);
       if(cat==='broadband')return b.cat==='Internet & Broadband';
       if(cat==='insurance')return b.cat==='Home Insurance'||b.cat==='Car Insurance';
       return false;
@@ -2875,7 +2876,9 @@ function renderBills(){
   if(!_card){
     _card=document.createElement('div');
     _card.className='card bills-card';
-    _bb.after(_card);
+    var _anchor=(_bb&&_bb.parentNode)?_bb:_ph;
+    if(_anchor&&_anchor.after)_anchor.after(_card);
+    else _bp.appendChild(_card);
   }
 
   // Demo fallback
@@ -2920,7 +2923,7 @@ function openCmp(billId){
   document.getElementById('cmpModalTitle').textContent='Switch: '+b.prov+' ('+b.cat+')';
   var cur=parseFloat(b.amt)||0;
   var html='<div style="background:var(--slate-7);border-radius:9px;padding:11px 14px;margin-bottom:14px;font-size:12.5px"><span style="font-weight:700">Current bill: </span>'+b.prov+' &mdash; £'+cur.toFixed(2)+'/mo</div>';
-  if(b.cat==='Gas'||b.cat==='Electricity'){
+  if(isEnergyCat(b.cat)){
     html+=cmpRow('Octopus Tracker',96.50,Math.max(0,cur-96.50),'#1 Rated 2025','https://octopus.energy','octopus',true);
     html+=cmpRow('E.ON Next Fixed 12m',108.00,Math.max(0,cur-108.00),'Fixed rate','https://www.eonenergy.com','eon',false);
     html+=cmpRow('British Gas Standard',120.00,Math.max(0,cur-120.00),'No exit fees','https://www.britishgas.co.uk','bg',false);
@@ -2948,7 +2951,7 @@ function renderCompare(){
   var personalised=bankConnected&&bankPersonalisedConsent;
   var bankBanner='';
   if(personalised){
-    var _bkE=mockTransactions.filter(function(t){return t.billMatch&&(t.billMatch.cat==='Gas'||t.billMatch.cat==='Electricity');}).reduce(function(a,t){return a+Math.abs(t.amount);},0);
+    var _bkE=mockTransactions.filter(function(t){return t.billMatch&&(isEnergyCat(t.billMatch.cat));}).reduce(function(a,t){return a+Math.abs(t.amount);},0);
     var _bkBB=mockTransactions.filter(function(t){return t.billMatch&&t.billMatch.cat==='Internet & Broadband';}).reduce(function(a,t){return a+Math.abs(t.amount);},0);
     bankBanner='<div class="bill-suggest" style="margin-bottom:16px">'
       +'<div style="width:36px;height:36px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#fff;font-size:18px"></i></div>'
@@ -2969,9 +2972,9 @@ function renderCompare(){
   fetchCompareRates(function(rates){
     var html='';
     // ── Energy ─────────────────────────────────────────────────────────
-    var energyBills=bills.filter(function(b){return b.cat==='Gas'||b.cat==='Electricity';});
+    var energyBills=bills.filter(function(b){return isEnergyCat(b.cat);});
     // Use actual bank amounts when personalised consent given
-    var _bankE=bankConnected&&bankPersonalisedConsent?mockTransactions.filter(function(t){return t.billMatch&&(t.billMatch.cat==='Gas'||t.billMatch.cat==='Electricity');}).reduce(function(a,t){return a+Math.abs(t.amount);},0):0;
+    var _bankE=bankConnected&&bankPersonalisedConsent?mockTransactions.filter(function(t){return t.billMatch&&(isEnergyCat(t.billMatch.cat));}).reduce(function(a,t){return a+Math.abs(t.amount);},0):0;
     if(energyBills.length||_bankE>0){
       var cur=_bankE||energyBills.reduce(function(a,b){return a+(parseFloat(b.amt)||0);},0);
       var energy=rates.energy||[];
