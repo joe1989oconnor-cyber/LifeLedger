@@ -1334,7 +1334,7 @@ footer a:hover{color:var(--teal);}
   <div class="auth-card">
     <div class="auth-logo"><div class="auth-logo-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z" fill="white" fill-opacity="0.92"/><rect x="9.5" y="11.5" width="5" height="4" rx="1" fill="white" fill-opacity="0.35"/></svg></div><span style="font-size:16.5px;font-weight:700;letter-spacing:-.2px">Life<span style="font-weight:300;opacity:.5">Ledger</span></span></div>
     <div class="auth-h">Welcome back</div>
-    <div class="auth-sub">Sign in to your dashboard. Tenants: use your tenant email to access the <strong>Tenant Portal</strong>.</div>
+    <div class="auth-sub">Sign in to your dashboard.</div>
     <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="loginEmail" value="sarah@example.com"></div>
     <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="loginPw" value="password"></div>
     <button class="btn-teal" onclick="doLogin()"><i class="ti ti-login"></i> Sign in</button>
@@ -2338,6 +2338,21 @@ function sBadge(st,due){
   else{cls='upcoming';lbl='Upcoming';}
   return '<span class="badge '+cls+'">'+lbl+'</span>';
 }
+function trackUrl(provId, fallbackUrl) {
+  var provider = RATE_PROVIDERS.find(function(p){ return p.id === provId; });
+  if (!provider) return fallbackUrl || '#';
+  var clickRef = 'LL-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+  if (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinId) {
+    if (provider.awinUrl) {
+      return provider.awinUrl.replace('AWIN_PUBLISHER_ID', AWIN_PUBLISHER_ID) + '&clickref=' + clickRef;
+    }
+    return 'https://www.awin1.com/cread.php?awinmid=' + provider.awinId
+      + '&awinaffid=' + AWIN_PUBLISHER_ID + '&clickref=' + clickRef
+      + '&ued=' + encodeURIComponent(provider.url);
+  }
+  return provider.url || fallbackUrl || '#';
+}
+
 function logClick(provId, src, fallbackUrl) {
   console.log('[Affiliate] Click:', provId, src, new Date().toISOString());
 
@@ -2351,8 +2366,8 @@ function logClick(provId, src, fallbackUrl) {
       'aviva': 'https://www.aviva.co.uk', 'direct-line': 'https://www.directline.com'
     };
     var url = allProviders[provId] || fallbackUrl || '#';
-    window.open(url, '_blank', 'noopener');
-    return;
+    try { window.open(url, '_blank', 'noopener'); } catch(e) {}
+    return url;
   }
 
   // ── Build destination URL ────────────────────────────────────────────────
@@ -2361,13 +2376,17 @@ function logClick(provId, src, fallbackUrl) {
 
   if (AWIN_PUBLISHER_ID !== 'REPLACE_WITH_YOUR_AWIN_ID' && provider.awinId) {
     // Use Awin click tracking URL — this handles tracking AND redirect in one request
-    destUrl = 'https://www.awin1.com/cread.php'
-      + '?awinmid=' + provider.awinId
-      + '&awinaffid=' + AWIN_PUBLISHER_ID
-      + '&clickref=' + clickRef
-      + '&p=' + encodeURIComponent(provider.awinUrl
-          ? provider.awinUrl.replace('AWIN_PUBLISHER_ID', AWIN_PUBLISHER_ID).split('&ued=')[1]
-          : provider.url);
+    if (provider.awinUrl) {
+      // awinUrl is already a complete, correctly-encoded cread.php link.
+      destUrl = provider.awinUrl.replace('AWIN_PUBLISHER_ID', AWIN_PUBLISHER_ID)
+        + '&clickref=' + clickRef;
+    } else {
+      destUrl = 'https://www.awin1.com/cread.php'
+        + '?awinmid=' + provider.awinId
+        + '&awinaffid=' + AWIN_PUBLISHER_ID
+        + '&clickref=' + clickRef
+        + '&ued=' + encodeURIComponent(provider.url);
+    }
     console.log('[Awin] Tracking click for', provider.name, 'ref:', clickRef);
   } else {
     // No Awin — go direct
@@ -2375,7 +2394,8 @@ function logClick(provId, src, fallbackUrl) {
     console.log('[No Awin] Direct link for', provider.name);
   }
 
-  window.open(destUrl, '_blank', 'noopener');
+  try { window.open(destUrl, '_blank', 'noopener'); } catch(e) {}
+  return destUrl;
 }
 function bestSav(){
   var best=null,bestSave=0;
@@ -2573,7 +2593,7 @@ var RATE_PROVIDERS=[
     awinId:'11005',awinUrl:'https://www.awin1.com/cread.php?awinmid=11005&awinaffid=AWIN_PUBLISHER_ID&ued=https%3A%2F%2Fwww.sky.com%2Fshop%2Fbroadband'},
 
   // ── Direct referral programmes (not on Awin) ──────────────────────────
-  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy/current-account/',sponsored:false,
+  {id:'octopus',name:'Octopus Energy',cat:'energy',logo:'⚡',logoBg:'var(--amber-m)',logoFg:'var(--amber)',url:'https://octopus.energy',sponsored:false,
     awinId:null,awinUrl:null},
   {id:'ovo',name:'OVO Energy',cat:'energy',logo:'🌿',logoBg:'var(--green-m)',logoFg:'var(--green)',url:'https://www.ovoenergy.com',sponsored:false,
     awinId:null,awinUrl:null},
@@ -2670,7 +2690,7 @@ function renderRatesBanner(){
           ?'<div class="rate-saving"><i class="ti ti-trending-down"></i> Save &pound;'+r.saving+'/mo vs your bill</div>'
           :'')
       +'</div>'
-      +'<a class="btn-rate-switch" href="'+r.url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'dash-rates\',\''+r.url+'\')">'
+      +'<a class="btn-rate-switch" href="'+trackUrl(r.id,r.url)+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'dash-rates\',\''+r.url+'\')">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch':'<i class="ti ti-arrow-right"></i> View')
       +'</a>'
       +'</div>';
@@ -2953,7 +2973,7 @@ function openCmp(billId){
 function cmpRow(name,price,saving,badge,url,prov,sponsored){
   var sp=sponsored?'<span style="font-size:9px;background:var(--gold-m);color:var(--gold);padding:1px 5px;border-radius:3px;font-weight:800">PARTNER</span>':'';
   var sv=saving?'<div class="cmp-saving"><i class="ti ti-trend-up"></i> Save \u00a3'+saving+'/mo vs current</div>':'<div style="font-size:11px;color:var(--slate-3)">Same as current price</div>';
-  return '<div class="cmp-item"><div class="cmp-info"><div class="cmp-name">'+name+' '+sp+'</div><div class="cmp-tag"><span class="badge upcoming">'+badge+'</span></div>'+sv+'</div><div style="text-align:right"><div class="cmp-price">\u00a3'+price.toFixed(2)+'/mo</div><a class="btn-switch" href="'+url+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+prov+'\',\'compare\',\''+url+'\')"><i class="ti ti-arrows-exchange"></i> Switch <span class="sw-save">View deal</span></a></div></div>';
+  return '<div class="cmp-item"><div class="cmp-info"><div class="cmp-name">'+name+' '+sp+'</div><div class="cmp-tag"><span class="badge upcoming">'+badge+'</span></div>'+sv+'</div><div style="text-align:right"><div class="cmp-price">\u00a3'+price.toFixed(2)+'/mo</div><a class="btn-switch" href="'+trackUrl(prov,url)+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+prov+'\',\'compare\',\''+url+'\')"><i class="ti ti-arrows-exchange"></i> Switch <span class="sw-save">View deal</span></a></div></div>';
 }
 function renderCompare(){
   var el=document.getElementById('compareContent');if(!el)return;
@@ -3087,7 +3107,7 @@ function cmpRowV2(r,curAmt,curProv){
   var style=getProviderStyle(r);
   var switchBtn=isCurrent
     ?'<span style="font-size:11px;color:var(--slate-3);font-weight:600">Current plan</span>'
-    :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="'+(r.url||'#')+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'compare\',\''+(r.url||'')+'\');return false;">'
+    :'<a class="btn-rate-switch'+(hasSaving?'':' outline')+'" href="'+trackUrl(r.id,r.url)+'" target="_blank" rel="noopener sponsored" onclick="logClick(\''+r.id+'\',\'compare\',\''+(r.url||'')+'\')">'
       +(hasSaving?'<i class="ti ti-arrows-exchange"></i> Switch &amp; save £'+saving+'/mo':'<i class="ti ti-arrow-right"></i> View deal')
       +'</a>';
   return '<div class="cmp-item" style="'+(isCurrent?'background:var(--slate-8)':'')+'">'
