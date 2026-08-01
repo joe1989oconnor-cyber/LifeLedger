@@ -2749,7 +2749,8 @@ function renderDash(){
     var sg2=document.getElementById('dashStats');if(sg2)sg2.innerHTML='';
     var da2=document.getElementById('dashActions');if(da2)da2.innerHTML='';
     if(dashGrid)dashGrid.style.display='none';
-    if(ratesBanner)ratesBanner.style.display='none';
+    if(ratesBanner)ratesBanner.style.display='';
+    if(typeof loadLiveRates==='function')loadLiveRates();
     if(tbl){tbl.innerHTML='';if(tbl.closest&&tbl.closest('.card'))tbl.closest('.card').style.display='none';}
     if(!document.getElementById('dashOnboard')){
       var oc=document.createElement('div');
