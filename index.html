@@ -1976,7 +1976,7 @@ function defIncome(){return [
 ];}
 
 // ── STATE ──────────────────────────────────────────────────────────────────
-var isGuest=false,isPro=false,isDark=false;
+var isGuest=false,isPro=true,isDark=false;
 var bills=[],budgets={},docs=[],inventory=[],members=[],achievements=[];
 var properties=[],tenants=[],maintenance=[],compliance=[],income=[],propInventories={};
 var xpPoints=0,currentRoom='All',calY=0,calM=0,wizardStep=0;
@@ -2004,7 +2004,7 @@ function initData(){
     income=defIncome();
     propInventories=defPropInventories();
     xpPoints=480;
-    isPro=false;
+    isPro=true;
   } else {
     bills=load('bills',[]);
     budgets=load('budgets',defBudgets());
@@ -2019,7 +2019,7 @@ function initData(){
     income=load('income',defIncome());
     propInventories=load('propInv',defPropInventories());
     xpPoints=load('xp',0);
-    isPro=load('pro',false);
+    isPro=true; /* Premium unlocked for everyone */
   }
   isDark=load('dark',false);
   if(!currentMode)currentMode=load('mode','individual');
@@ -2150,7 +2150,7 @@ function initBlank(){
   docs=[];inventory=[];members=[];vehicles=[];notes=[];
   achievements=defAchievements();
   properties=[];tenants=[];maintenance=[];compliance=[];income=[];propInventories={};
-  xpPoints=0;isPro=false;isDark=darkPref;
+  xpPoints=0;isPro=true;isDark=darkPref;
   moveDone=[];moveFrom='';moveTo='';moveDate='';
   window._moveFetchTried=false;
   nextBillId=1;nextDocId=1;nextItemId=1;nextVehicleId=1;nextNoteId=1;
@@ -2205,6 +2205,7 @@ function applyMode(){
   document.querySelector('.sb-nav').innerHTML=currentMode==='landlord'?LLD_NAV:IND_NAV;
   hideLandlordUI();
   hideBankConnectUI();
+  hidePremiumUI();
   save('mode',currentMode);
   var _tb=document.querySelector('#page-moving .tab-bar');
   if(_tb)_tb.style.display=currentMode==='landlord'?'none':'';
@@ -2292,7 +2293,7 @@ function nav(page,el){
   else if(page==='vehicle')renderVehicle();
   else if(page==='notes')renderNotes();
   else if(page==='xp')renderXP();
-  else if(page==='upgrade')renderUpgrade();
+  else if(page==='upgrade'){ nav('dashboard',null); return; }
   else if(page==='ll-dashboard')renderLLDashboard();
   else if(page==='ll-properties')renderProperties();
   else if(page==='ll-tenants')renderTenants();
@@ -2701,8 +2702,14 @@ function renderDash(){
 
   // ── Computed values ────────────────────────────────────────────────────
   var total=bills.reduce(function(a,b){
-    var mo=b.freq==='weekly'?parseFloat(b.amt)*4.33:b.freq==='fortnightly'?parseFloat(b.amt)*2.17:b.freq==='annual'?parseFloat(b.amt)/12:parseFloat(b.amt)||0;
-    return a+mo;
+    var amt=parseFloat(b.amt)||0;
+    var f=(b.freq||'monthly').toLowerCase();
+    var mo=f==='weekly'?amt*4.33
+      :f==='fortnightly'?amt*2.17
+      :f==='quarterly'?amt/3
+      :(f==='annual'||f==='annually'||f==='yearly')?amt/12
+      :amt; // monthly / anything else
+    return a+(isNaN(mo)?0:mo);
   },0);
   var overdue=bills.filter(function(b){return b.status!=='paid'&&(b.status==='overdue'||daysUntil(b.due)<0);});
   var soon=bills.filter(function(b){return (b.status==='soon'||(daysUntil(b.due)>=0&&daysUntil(b.due)<=7))&&b.status!=='paid'&&b.status!=='overdue';});
@@ -6088,6 +6095,7 @@ function _showDocViewer(d, url) {
 window.addEventListener('load',function(){
   try { hideLandlordUI(); } catch(e) {}
   try { hideBankConnectUI(); } catch(e) {}
+  try { hidePremiumUI(); } catch(e) {}
   function hideLoader(){
     var el=document.getElementById('screen-loading');
     if(el)el.style.display='none';
@@ -6656,6 +6664,20 @@ function navPortal(page){nav_portal(page);}
 // Set to true to re-enable — no code has been removed.
 var LANDLORD_ENABLED = false;
 var BANK_CONNECT_ENABLED = false;
+
+function hidePremiumUI(){
+  try {
+    // Sidebar "Go Premium" upsell card
+    var up=document.getElementById('sbUpgrade'); if(up)up.style.display='none';
+    // Premium chip in the topbar
+    var pc=document.getElementById('proChip'); if(pc)pc.style.display='none';
+    // Sidebar nav "Premium" item(s) + mobile "More" Premium item
+    document.querySelectorAll('[onclick*="nav(\'upgrade\'"]').forEach(function(el){
+      var row = el.closest ? (el.closest('.mob-more-item') || el) : el;
+      row.style.display = 'none';
+    });
+  } catch(e) {}
+}
 
 function hideBankConnectUI(){
   if (BANK_CONNECT_ENABLED) return;
