@@ -2325,6 +2325,7 @@ var catEmoji={'Gas':'🔥','Electricity':'⚡','Water':'💧','Internet & Broadb
 var catColor={'Gas':'var(--amber-m)','Electricity':'var(--amber-l)','Gas & Electricity':'var(--amber-m)','Water':'var(--blue-m)','Internet & Broadband':'var(--indigo-m)','TV & Streaming':'var(--purple-m)','Home Insurance':'var(--green-m)','Car Insurance':'var(--indigo-l)','Mortgage / Rent':'var(--teal-xl)','Council Tax':'var(--slate-7)','Other':'var(--slate-7)'};
 var catFg={'Gas':'var(--amber)','Electricity':'var(--amber)','Gas & Electricity':'var(--amber)','Water':'var(--blue)','Internet & Broadband':'var(--indigo)','TV & Streaming':'var(--purple)','Home Insurance':'var(--green)','Car Insurance':'var(--indigo)','Mortgage / Rent':'var(--teal)','Council Tax':'var(--slate-3)','Other':'var(--slate-3)'};
 function getCat(c){var x=catColors[c]||'#f1f5f9,#334155';var p=x.split(',');return{bg:p[0],fg:p[1]};}
+function isEnergyCat(cat){return cat==='Gas'||cat==='Electricity'||cat==='Gas & Electricity';}
 function fmtD(s){if(!s)return '';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function fmtM(s){if(!s)return '';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
 function daysUntil(s){if(!s)return 999;var n=new Date();n.setHours(0,0,0,0);var d=new Date(s);d.setHours(0,0,0,0);return Math.round((d-n)/(86400000));}
@@ -2477,7 +2478,6 @@ function billRow(b,mini){
   var cc=getCat(b.cat);var mn=parseFloat(b.amt)||0;
   var em=catEmoji[b.cat]||'\uD83D\uDCCB';
   // Determine best live saving for this bill's category
-  function isEnergyCat(cat){return cat==='Gas'||cat==='Electricity'||cat==='Gas & Electricity';}
   var switchableCats=['Gas','Electricity','Gas & Electricity','Internet & Broadband','Home Insurance','Car Insurance','Mortgage / Rent'];
   var isSwitchable=switchableCats.indexOf(b.cat)>-1;
   var bestSaving=0;var bestProvider='';
