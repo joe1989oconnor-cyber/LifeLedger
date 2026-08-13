@@ -117,8 +117,18 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ success: false, error: 'Could not process the statement right now. Please try again.' });
     }
 
+    // Diagnostic: log the response shape so we can see stop_reason / content types.
+    console.log('[Statement] API ok. stop_reason:', data.stop_reason,
+      '| content types:', JSON.stringify((data.content || []).map(function (c) { return c.type; })),
+      '| usage:', JSON.stringify(data.usage || {}));
+
     let txt = (data.content && data.content[0] && data.content[0].text) || '';
     txt = txt.replace(/```json|```/g, '').trim();
+
+    if (!txt) {
+      console.error('[Statement] Empty text from model. Full content:', JSON.stringify(data.content || []).slice(0, 500));
+      return res.status(502).json({ success: false, error: 'The statement could not be read. If it is a scanned image, try downloading the PDF directly from your banking app.' });
+    }
 
     let bills;
     try {
