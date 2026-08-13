@@ -907,6 +907,9 @@ footer a:hover{color:var(--teal);}
   #importModal .modal-foot{flex-direction:column-reverse;gap:8px;}
   #importModal .modal-foot .btn-add,#importModal .modal-foot .btn-cancel{width:100%;justify-content:center;height:42px;}
 }
+/* The topbar restyles .btn-add as translucent-white; force solid teal in the import footer so it is visible on white */
+#importModal .modal-foot .btn-add{background:var(--teal);color:#fff;border:none;}
+#importModal .modal-foot .btn-add:hover{background:var(--teal-d);}
 .import-dropzone{border:2px dashed var(--border);border-radius:14px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
 .import-dropzone:hover{border-color:var(--teal);background:var(--teal-xl);}
 .import-dropzone.dragover{border-color:var(--teal);background:var(--teal-xl);}
