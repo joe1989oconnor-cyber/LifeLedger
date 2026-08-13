@@ -122,12 +122,20 @@ module.exports = async function handler(req, res) {
       '| content types:', JSON.stringify((data.content || []).map(function (c) { return c.type; })),
       '| usage:', JSON.stringify(data.usage || {}));
 
-    let txt = (data.content && data.content[0] && data.content[0].text) || '';
+    // Find the TEXT block — the model may return "thinking" blocks first, so we
+    // can't just read content[0]. Concatenate all text blocks to be safe.
+    let txt = '';
+    if (Array.isArray(data.content)) {
+      txt = data.content
+        .filter(function (c) { return c && c.type === 'text' && typeof c.text === 'string'; })
+        .map(function (c) { return c.text; })
+        .join('\n');
+    }
     txt = txt.replace(/```json|```/g, '').trim();
 
     if (!txt) {
-      console.error('[Statement] Empty text from model. Full content:', JSON.stringify(data.content || []).slice(0, 500));
-      return res.status(502).json({ success: false, error: 'The statement could not be read. If it is a scanned image, try downloading the PDF directly from your banking app.' });
+      console.error('[Statement] No text block in response. Types:', JSON.stringify((data.content || []).map(function (c) { return c.type; })));
+      return res.status(502).json({ success: false, error: 'The statement could not be read. Please try again.' });
     }
 
     let bills;
