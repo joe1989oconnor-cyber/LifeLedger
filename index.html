@@ -899,6 +899,14 @@ footer a:hover{color:var(--teal);}
 .setup-sub{font-size:10.5px;color:var(--slate-3);margin-top:1px;}
 .setup-cmp{border:none;border-top:1px solid var(--border);background:var(--teal-xl);color:var(--teal);font:700 11px/1 var(--font);padding:7px;cursor:pointer;}
 .setup-cmp:active{background:var(--teal-l);}
+#importModal .modal{display:flex;flex-direction:column;max-height:90vh;overflow:hidden;}
+#importModal .modal-head{flex-shrink:0;}
+#importModal .modal-body{flex:1;overflow-y:auto;min-height:0;}
+#importModal .modal-foot{flex-shrink:0;position:sticky;bottom:0;background:var(--white);}
+@media(max-width:520px){
+  #importModal .modal-foot{flex-direction:column-reverse;gap:8px;}
+  #importModal .modal-foot .btn-add,#importModal .modal-foot .btn-cancel{width:100%;justify-content:center;height:42px;}
+}
 .import-dropzone{border:2px dashed var(--border);border-radius:14px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
 .import-dropzone:hover{border-color:var(--teal);background:var(--teal-xl);}
 .import-dropzone.dragover{border-color:var(--teal);background:var(--teal-xl);}
