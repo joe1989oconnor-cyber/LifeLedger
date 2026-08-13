@@ -4048,13 +4048,15 @@ function editBill(id){
   openModal('billModal');
 }
 // ============ IMPORT BILLS FROM STATEMENT ============
-var STATEMENT_IMPORT_MOCK = true;  // flip to false when /api/bills/import-statement is live
+var STATEMENT_IMPORT_MOCK = false;  // set true to test against hardcoded bills without the endpoint
 var _importDetected = [];
+var _importInFlight = false;
 
 function _escImport(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];}); }
 
 function openImport(){
   _importDetected = [];
+  _importInFlight = false;
   var m=document.getElementById('importModal'); if(!m) return;
   document.getElementById('importUpload').style.display='';
   document.getElementById('importLoading').style.display='none';
@@ -4094,8 +4096,12 @@ function processStatementFile(file){
   document.getElementById('importLoading').style.display='';
   document.getElementById('importModalTitle').textContent='Reading your statement';
 
+  if(_importInFlight) return;  // ignore a second tap while a parse is running
+  _importInFlight = true;
+
   if(STATEMENT_IMPORT_MOCK){
     setTimeout(function(){
+      _importInFlight = false;
       _handleImportResponse({success:true, bills:[
         { prov:'British Gas',  cat:'Gas',                  amt:82.00, freq:'Monthly', source:'BRITISH GAS ENERGY  DD' },
         { prov:'Virgin Media', cat:'Internet & Broadband', amt:39.99, freq:'Monthly', source:'VIRGIN MEDIA PYMT' },
@@ -4105,17 +4111,44 @@ function processStatementFile(file){
       ]});
     }, 2500);
   } else {
-    var fd = new FormData(); fd.append('statement', file);
-    fetch('/api/bills/import-statement', { method:'POST', body:fd, credentials:'include' })
+    // Read the PDF as base64, strip the data: prefix, POST as JSON.
+    var reader = new FileReader();
+    reader.onload = function(){
+      var base64 = String(reader.result).split(',')[1];
+      fetch('/api/bills/import-statement', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        credentials:'include',
+        body: JSON.stringify({ pdf: base64, filename: file.name })
+      })
       .then(function(r){ return r.json(); })
-      .then(function(res){ _handleImportResponse(res); })
-      .catch(function(e){ console.error('[Import] error:', e); _handleImportResponse({success:false, error:'Could not read that statement'}); });
+      .then(function(res){ _importInFlight = false; _handleImportResponse(res); })
+      .catch(function(e){ _importInFlight = false; console.error('[Import] error:', e);
+        _handleImportResponse({success:false, error:'Could not reach the statement reader. Please check your connection and try again.'}); });
+    };
+    reader.onerror = function(){ _importInFlight = false;
+      _handleImportResponse({success:false, error:'Could not read that file. Please try again.'}); };
+    reader.readAsDataURL(file);
   }
 }
 
 function _handleImportResponse(res){
-  if(!res || !res.success || !res.bills || !res.bills.length){
-    // Empty / error case
+  // Hard failure: the endpoint returned success:false with a user-friendly error.
+  if(res && res.success === false){
+    document.getElementById('importLoading').style.display='none';
+    document.getElementById('importConfirm').style.display='';
+    document.getElementById('importModalTitle').textContent='Couldn\u2019t read statement';
+    document.getElementById('importConfirmSub').style.display='none';
+    document.getElementById('importList').innerHTML =
+      '<div style="text-align:center;padding:20px 6px">'
+      + '<div style="font-size:13.5px;color:var(--slate-2);margin-bottom:16px">'+_escImport(res.error || 'We couldn\u2019t read that statement. Please try again.')+'</div>'
+      + '<button class="btn-add" onclick="openImport()"><i class="ti ti-refresh"></i> Try another file</button>'
+      + '</div>';
+    document.getElementById('importFoot').style.display='none';
+    return;
+  }
+  // Success but nothing detected.
+  if(!res || !res.bills || !res.bills.length){
     document.getElementById('importLoading').style.display='none';
     document.getElementById('importConfirm').style.display='';
     document.getElementById('importModalTitle').textContent='No bills found';
