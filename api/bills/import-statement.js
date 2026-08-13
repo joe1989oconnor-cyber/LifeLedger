@@ -41,6 +41,8 @@ const EXTRACTION_PROMPT =
   + '  cat    — MUST be exactly one of: ' + CATEGORIES.join(', ') + '\n'
   + '  amt    — the monthly amount as a number in GBP (no currency symbol)\n'
   + '  freq   — "Monthly" (use this unless clearly otherwise)\n'
+  + '  lastPaid — the date this bill was most recently paid, as it appears on the '
+  + 'statement, in YYYY-MM-DD format. If you cannot determine a date, use null.\n'
   + '  source — the raw transaction description exactly as it appears on the statement\n\n'
   + 'If the same provider appears multiple times, return it ONCE using the most recent amount. '
   + 'If you are unsure whether something is a household bill, leave it out. '
@@ -170,6 +172,7 @@ module.exports = async function handler(req, res) {
           cat: CATEGORIES.indexOf(b.cat) !== -1 ? b.cat : 'Other',
           amt: isFinite(amt) && amt > 0 ? Math.round(amt * 100) / 100 : null,
           freq: safeStr(b.freq, 20) || 'Monthly',
+          due: projectNextDue(b.lastPaid),
           source: safeStr(b.source, 120)
         };
       })
@@ -186,6 +189,28 @@ module.exports = async function handler(req, res) {
 function safeStr(v, max) {
   if (v == null) return '';
   return String(v).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, max);
+}
+
+// Given the date a bill was last paid, project the next monthly occurrence.
+// Real data → honest projection. Returns YYYY-MM-DD, or null if we can't tell.
+function projectNextDue(lastPaid) {
+  if (!lastPaid) return null;
+  const d = new Date(lastPaid);
+  if (isNaN(d.getTime())) return null;
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  // Step forward a month at a time from the last payment until we're in the future.
+  // Cap the loop so a very old date can't spin forever.
+  let guard = 0;
+  while (d < today && guard < 36) {
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    guard++;
+  }
+  if (d < today) return null; // couldn't bring it into the future within 3 years
+
+  return d.toISOString().split('T')[0];
 }
 
 function getAllowedOrigin(req) {
