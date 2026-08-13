@@ -1485,7 +1485,7 @@ footer a:hover{color:var(--teal);}
 </div>
 
 <div class="page" id="page-bills">
-  <div class="page-head"><div class="ph-left"><div class="page-title">My Bills</div><div class="page-sub">All recurring payments</div></div><button class="btn-add" onclick="openAddBill()"><i class="ti ti-plus"></i> Add Bill</button></div>
+  <div class="page-head"><div class="ph-left"><div class="page-title">My Bills</div><div class="page-sub">All recurring payments</div></div><button class="btn-rate-switch outline" style="margin-right:8px" onclick="openImport()"><i class="ti ti-file-upload"></i> Import from statement</button><button class="btn-add" onclick="openAddBill()"><i class="ti ti-plus"></i> Add Bill</button></div>
   <div class="priv-notice"><i class="ti ti-shield-check"></i><div>Compare &amp; Switch links earn LifeLedger a fee from the <em>new provider only</em> &mdash; never from you. <button class="btn-xs bxs-teal" style="padding:2px 8px;font-size:10.5px" onclick="openModal('disclosureModal')">Disclosure</button></div></div>
   <div class="card"><div class="bills-bar"><div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search bills&hellip;" id="billSearch" oninput="filterBills()"></div><select class="fsel" id="catFilter" onchange="filterBills()"><option value="">All categories</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Van Insurance</option><option>Council Tax</option><option>Other</option></select><select class="fsel" id="stFilter" onchange="filterBills()"><option value="">All statuses</option><option value="overdue">Overdue</option><option value="soon">Due soon</option><option value="upcoming">Upcoming</option><option value="paid">Paid</option></select><button class="btn-xs bxs-gray" onclick="exportBillsCSV()"><i class="ti ti-download"></i> Export CSV</button></div><div style="overflow-x:auto"><table class="tbl" id="billsTable"></table></div></div>
 </div>
@@ -1774,6 +1774,35 @@ footer a:hover{color:var(--teal);}
 
 <!-- ══════════════════ MODALS ══════════════════ -->
 <div class="modal-backdrop" id="billModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="billModalTitle">Add Bill</div><button class="modal-close" onclick="closeModal('billModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><input type="hidden" id="editingId"><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Provider *</label><input type="text" class="fi" id="fProv" placeholder="e.g. British Gas"></div><div class="fg" style="margin-bottom:0"><label class="fl">Category *</label><select class="form-select" id="fCat"><option value="">Select&hellip;</option><option>Mortgage / Rent</option><option>Gas</option><option>Electricity</option><option>Gas &amp; Electricity</option><option>Water</option><option>Internet &amp; Broadband</option><option>TV &amp; Streaming</option><option>Home Insurance</option><option>Car Insurance</option><option>Van Insurance</option><option>Council Tax</option><option>Other</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Amount (&pound;) *</label><input type="number" class="fi" id="fAmt" placeholder="0.00" step="0.01" min="0"></div><div class="fg" style="margin-bottom:0"><label class="fl">Frequency</label><select class="form-select" id="fFreq"><option>Monthly</option><option>Annual</option><option>Quarterly</option></select></div></div><div class="form-row-2" style="margin-bottom:12px"><div class="fg" style="margin-bottom:0"><label class="fl">Next due date</label><input type="date" class="fi" id="fDue"></div><div class="fg" style="margin-bottom:0"><label class="fl">Status</label><select class="form-select" id="fSt"><option value="upcoming">Upcoming</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="soon">Due soon</option></select></div></div><div class="fg"><label class="fl">Provider website URL</label><input type="url" class="fi" id="fUrl" placeholder="https://"></div><div class="form-row-2"><div class="fg" style="margin-bottom:0"><label class="fl">Reference</label><input type="text" class="fi" id="fRef" placeholder="Optional"></div><div class="fg" style="margin-bottom:0"><label class="fl">Direct debit?</label><select class="form-select" id="fDD"><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="fg" style="margin-top:11px"><label class="fl">Notes</label><textarea class="form-textarea" id="fNotes" rows="2"></textarea></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('billModal')">Cancel</button><button class="btn-save" onclick="saveBill()"><i class="ti ti-check"></i> Save bill</button></div></div></div>
+
+<div class="modal-backdrop" id="importModal"><div class="modal" style="max-width:560px">
+  <div class="modal-head"><div class="modal-title" id="importModalTitle">Import bills from statement</div><button class="modal-close" onclick="closeImport()"><i class="ti ti-x"></i></button></div>
+  <div class="modal-body">
+    <div id="importUpload">
+      <div style="text-align:center;padding:14px 4px 6px">
+        <div style="width:52px;height:52px;border-radius:14px;background:var(--teal-xl);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px"><i class="ti ti-file-upload"></i></div>
+        <div style="font-size:14px;font-weight:700;color:var(--slate);margin-bottom:4px">Upload a PDF bank statement</div>
+        <div style="font-size:12.5px;color:var(--slate-3);margin-bottom:16px">We&rsquo;ll scan it for recurring bills you can add.</div>
+        <button class="btn-add" onclick="document.getElementById('importFileInput').click()"><i class="ti ti-upload"></i> Choose PDF</button>
+        <input type="file" id="importFileInput" accept="application/pdf" style="display:none" onchange="handleStatementFile(this)">
+        <div class="priv-notice" style="margin-top:16px;text-align:left"><i class="ti ti-shield-check"></i><div>We read your statement to find bills, then discard it &mdash; we never store your statement or share it.</div></div>
+      </div>
+    </div>
+    <div id="importLoading" style="display:none;text-align:center;padding:34px 4px">
+      <i class="ti ti-loader-2 spin" style="font-size:30px;color:var(--teal)"></i>
+      <div style="font-size:14px;font-weight:700;color:var(--slate);margin-top:14px">Reading your statement&hellip;</div>
+      <div style="font-size:12.5px;color:var(--slate-3);margin-top:4px">This usually takes a few seconds</div>
+    </div>
+    <div id="importConfirm" style="display:none">
+      <div style="font-size:13px;color:var(--slate-2);margin-bottom:12px" id="importConfirmSub">We found these bills &mdash; tick the ones to add.</div>
+      <div id="importList"></div>
+    </div>
+  </div>
+  <div class="modal-foot" id="importFoot" style="display:none">
+    <button class="btn-cancel" onclick="closeImport()">Cancel</button>
+    <button class="btn-add" onclick="addImportedBills()"><i class="ti ti-plus"></i> Add selected bills</button>
+  </div>
+</div></div>
 
 <div class="modal-backdrop" id="compareModal"><div class="modal" style="max-width:560px"><div class="modal-head"><div class="modal-title" id="cmpModalTitle">Compare</div><button class="modal-close" onclick="closeModal('compareModal')"><i class="ti ti-x"></i></button></div><div class="modal-body"><div class="priv-notice" style="margin-bottom:12px"><i class="ti ti-shield-check"></i><div>Fee paid by new provider only. Prices accurate June 2025.</div></div><div id="cmpModalContent"></div></div><div class="modal-foot"><button class="btn-cancel" onclick="closeModal('compareModal')">Close</button></div></div></div>
 
@@ -4010,6 +4039,143 @@ function editBill(id){
   document.getElementById('fNotes').value=b.notes||'';
   openModal('billModal');
 }
+// ============ IMPORT BILLS FROM STATEMENT ============
+var STATEMENT_IMPORT_MOCK = true;  // flip to false when /api/bills/import-statement is live
+var _importDetected = [];
+
+function _escImport(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];}); }
+
+function openImport(){
+  _importDetected = [];
+  var m=document.getElementById('importModal'); if(!m) return;
+  document.getElementById('importUpload').style.display='';
+  document.getElementById('importLoading').style.display='none';
+  document.getElementById('importConfirm').style.display='none';
+  document.getElementById('importFoot').style.display='none';
+  document.getElementById('importModalTitle').textContent='Import bills from statement';
+  var fi=document.getElementById('importFileInput'); if(fi) fi.value='';
+  m.classList.add('open');
+}
+
+function closeImport(){
+  var m=document.getElementById('importModal'); if(m) m.classList.remove('open');
+}
+
+function handleStatementFile(input){
+  var file = input && input.files && input.files[0];
+  if(!file) return;
+  if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)){
+    toast('Please choose a PDF file','error'); input.value=''; return;
+  }
+  if(file.size > 10*1024*1024){
+    toast('That file is over 10MB — please upload a smaller PDF','error'); input.value=''; return;
+  }
+  // Go straight to loading
+  document.getElementById('importUpload').style.display='none';
+  document.getElementById('importConfirm').style.display='none';
+  document.getElementById('importFoot').style.display='none';
+  document.getElementById('importLoading').style.display='';
+  document.getElementById('importModalTitle').textContent='Reading your statement';
+
+  if(STATEMENT_IMPORT_MOCK){
+    setTimeout(function(){
+      _handleImportResponse({success:true, bills:[
+        { prov:'British Gas',  cat:'Gas',                  amt:82.00, freq:'Monthly', source:'BRITISH GAS ENERGY  DD' },
+        { prov:'Virgin Media', cat:'Internet & Broadband', amt:39.99, freq:'Monthly', source:'VIRGIN MEDIA PYMT' },
+        { prov:'Aviva',        cat:'Home Insurance',       amt:24.50, freq:'Monthly', source:'AVIVA INSURANCE' },
+        { prov:'Netflix',      cat:'TV & Streaming',       amt:10.99, freq:'Monthly', source:'NETFLIX.COM' },
+        { prov:'Thames Water', cat:'Water',                amt:31.00, freq:'Monthly', source:'THAMES WATER UTIL' }
+      ]});
+    }, 2500);
+  } else {
+    var fd = new FormData(); fd.append('statement', file);
+    fetch('/api/bills/import-statement', { method:'POST', body:fd, credentials:'include' })
+      .then(function(r){ return r.json(); })
+      .then(function(res){ _handleImportResponse(res); })
+      .catch(function(e){ console.error('[Import] error:', e); _handleImportResponse({success:false, error:'Could not read that statement'}); });
+  }
+}
+
+function _handleImportResponse(res){
+  if(!res || !res.success || !res.bills || !res.bills.length){
+    // Empty / error case
+    document.getElementById('importLoading').style.display='none';
+    document.getElementById('importConfirm').style.display='';
+    document.getElementById('importModalTitle').textContent='No bills found';
+    document.getElementById('importConfirmSub').style.display='none';
+    document.getElementById('importList').innerHTML =
+      '<div style="text-align:center;padding:20px 6px">'
+      + '<div style="font-size:13.5px;color:var(--slate-2);margin-bottom:6px">We couldn&rsquo;t find any recurring bills in that statement.</div>'
+      + '<div style="font-size:12.5px;color:var(--slate-3);margin-bottom:16px">You can add your bills manually instead.</div>'
+      + '<button class="btn-add" onclick="closeImport();openAddBill()"><i class="ti ti-plus"></i> Add a bill manually</button>'
+      + '</div>';
+    document.getElementById('importFoot').style.display='none';
+    return;
+  }
+  _importDetected = res.bills.slice();
+  renderImportConfirm();
+}
+
+function renderImportConfirm(){
+  document.getElementById('importLoading').style.display='none';
+  document.getElementById('importUpload').style.display='none';
+  document.getElementById('importConfirm').style.display='';
+  document.getElementById('importFoot').style.display='';
+  document.getElementById('importModalTitle').textContent='Review detected bills';
+  document.getElementById('importConfirmSub').style.display='';
+  var cats=['Mortgage / Rent','Gas','Electricity','Gas & Electricity','Water','Internet & Broadband','TV & Streaming','Home Insurance','Car Insurance','Van Insurance','Council Tax','Other'];
+  var html = _importDetected.map(function(b,i){
+    var opts = cats.map(function(cat){ return '<option'+(cat===b.cat?' selected':'')+'>'+_escImport(cat)+'</option>'; }).join('');
+    return '<div class="imp-row" style="display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border)">'
+      + '<input type="checkbox" class="imp-chk" data-i="'+i+'" checked style="margin-top:3px;width:17px;height:17px;flex-shrink:0;accent-color:var(--teal)">'
+      + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13.5px;font-weight:700;color:var(--slate)">'+_escImport(b.prov)+'</div>'
+        + '<div style="display:flex;gap:8px;align-items:center;margin-top:5px;flex-wrap:wrap">'
+          + '<select class="form-select imp-cat" data-i="'+i+'" style="font-size:12px;padding:4px 8px;height:auto;flex:1;min-width:130px">'+opts+'</select>'
+          + '<span style="font-size:13px;font-weight:700;color:var(--slate-2);white-space:nowrap">&pound;'+(parseFloat(b.amt)||0).toFixed(2)+'/mo</span>'
+        + '</div>'
+        + (b.source ? '<div style="font-size:10.5px;color:var(--slate-4);margin-top:4px">'+_escImport(b.source)+'</div>' : '')
+      + '</div>'
+    + '</div>';
+  }).join('');
+  document.getElementById('importList').innerHTML = html;
+}
+
+function addImportedBills(){
+  var rows = document.querySelectorAll('#importList .imp-chk');
+  var chosen = [];
+  rows.forEach(function(chk){
+    if(!chk.checked) return;
+    var i = parseInt(chk.getAttribute('data-i'));
+    var b = _importDetected[i]; if(!b) return;
+    var catSel = document.querySelector('#importList .imp-cat[data-i="'+i+'"]');
+    var cat = catSel ? catSel.value : b.cat;
+    chosen.push({ prov:b.prov, cat:cat, amt:parseFloat(b.amt)||0, freq:b.freq||'Monthly' });
+  });
+  if(!chosen.length){ toast('Tick at least one bill to add','error'); return; }
+  var token = sbToken || load('sb_token', null);
+  chosen.forEach(function(cb){
+    var bill = { id: nextBillId++, sb_id: undefined, prov: cb.prov, cat: cb.cat, amt: cb.amt,
+      freq: cb.freq, due: '', status: 'upcoming', url:'', ref:'', dd:'yes', notes:'Imported from statement' };
+    bills.push(bill);
+    if(token && !isGuest){
+      var payload = { prov:bill.prov, cat:bill.cat, amt:bill.amt, freq:bill.freq, due:null,
+        status:bill.status, url:null, ref:null, dd:bill.dd, notes:bill.notes };
+      fetch('/api/supabase/data?table=bills', { method:'POST',
+        headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
+        body: JSON.stringify(payload) })
+        .then(function(r){ return r.json(); })
+        .then(function(res){ if(res && res.data && res.data.id){ bill.sb_id = res.data.id; save('bills',bills); } })
+        .catch(function(e){ console.error('[Import] save bill:', e); });
+    }
+  });
+  save('bills', bills);
+  if(typeof awardXP==='function') awardXP(10, 'bill');
+  closeImport();
+  toast(chosen.length+' bill'+(chosen.length>1?'s':'')+' added','success');
+  nav('bills', null);
+}
+
 function saveBill(){
   var prov=document.getElementById('fProv').value.trim();
   var cat=document.getElementById('fCat').value;
@@ -4119,7 +4285,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.addEventListener('click',function(e){
   if(e.target.classList.contains('modal-backdrop')){
     // Don't close addItemModal on backdrop click — accidental closes are annoying
-    var safeToClose=['billModal','compareModal','disclosureModal','budgetModal','switchModeModal'];
+    var safeToClose=['billModal','compareModal','disclosureModal','budgetModal','switchModeModal','importModal'];
     var modalId=e.target.id;
     if(safeToClose.indexOf(modalId)>=0)e.target.classList.remove('open');
   }
@@ -6917,6 +7083,12 @@ function renderOnboarding(){
     +'<div class="setup-ico" style="background:var(--teal-xl);color:var(--teal)"><i class="ti ti-car"></i></div>'
     +'<div class="setup-txt"><div class="setup-lbl">Add a vehicle \u2014 enter your reg, we fill the rest</div>'
     +'<div class="setup-sub">MOT and road tax dates fill in automatically from DVLA. The closest thing to auto-import.</div></div>'
+    +'<i class="ti ti-chevron-right" style="margin-left:auto;color:var(--slate-4)"></i>'
+    +'</div>'
+    +'<div class="setup-vehicle" onclick="openImport()" style="border-color:var(--border)">'
+    +'<div class="setup-ico" style="background:var(--slate-7);color:var(--slate-3)"><i class="ti ti-file-upload"></i></div>'
+    +'<div class="setup-txt"><div class="setup-lbl">Import bills from statement</div>'
+    +'<div class="setup-sub">Upload a PDF bank statement and we\'ll find your bills.</div></div>'
     +'<i class="ti ti-chevron-right" style="margin-left:auto;color:var(--slate-4)"></i>'
     +'</div>';
   strip.innerHTML=html;
