@@ -1,4 +1,3 @@
-
 // api/bills/import-statement.js
 //
 // Reads an uploaded UK bank statement (PDF) and extracts recurring bills.
@@ -125,8 +124,21 @@ module.exports = async function handler(req, res) {
     try {
       bills = JSON.parse(txt);
     } catch (e) {
-      console.error('[Statement] Parse fail:', txt.slice(0, 200));
-      return res.status(502).json({ success: false, error: 'Could not read the bills from that statement. Please try again.' });
+      // The model sometimes wraps the array in a sentence ("Here are the bills:...").
+      // Pull out the first [...] block and try again before giving up.
+      const start = txt.indexOf('[');
+      const end = txt.lastIndexOf(']');
+      if (start !== -1 && end !== -1 && end > start) {
+        try {
+          bills = JSON.parse(txt.slice(start, end + 1));
+        } catch (e2) {
+          console.error('[Statement] Parse fail after slice. Raw:', txt.slice(0, 400));
+          return res.status(502).json({ success: false, error: 'Could not read the bills from that statement. Please try again.' });
+        }
+      } else {
+        console.error('[Statement] Parse fail, no array found. Raw:', txt.slice(0, 400));
+        return res.status(502).json({ success: false, error: 'Could not read the bills from that statement. Please try again.' });
+      }
     }
 
     if (!Array.isArray(bills)) bills = [];
