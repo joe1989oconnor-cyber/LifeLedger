@@ -94,7 +94,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: 2000,
+        max_tokens: 8000,
         messages: [{
           role: 'user',
           content: [
@@ -152,11 +152,14 @@ module.exports = async function handler(req, res) {
         try {
           bills = JSON.parse(txt.slice(start, end + 1));
         } catch (e2) {
-          console.error('[Statement] Parse fail after slice. Raw:', txt.slice(0, 400));
-          return res.status(502).json({ success: false, error: 'Could not read the bills from that statement. Please try again.' });
+          bills = salvageObjects(txt);
         }
       } else {
-        console.error('[Statement] Parse fail, no array found. Raw:', txt.slice(0, 400));
+        // No closing bracket — response was likely truncated. Salvage whole objects.
+        bills = salvageObjects(txt);
+      }
+      if (!bills) {
+        console.error('[Statement] Parse fail, unrecoverable. Raw:', txt.slice(0, 400));
         return res.status(502).json({ success: false, error: 'Could not read the bills from that statement. Please try again.' });
       }
     }
@@ -189,6 +192,30 @@ module.exports = async function handler(req, res) {
 function safeStr(v, max) {
   if (v == null) return '';
   return String(v).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, max);
+}
+
+// If the JSON array was truncated mid-response, salvage every COMPLETE {...}
+// object we can find, so the user still gets most of their bills rather than
+// an error. Returns an array (possibly empty), or null if nothing usable.
+function salvageObjects(txt) {
+  const objects = [];
+  let depth = 0, startIdx = -1;
+  for (let i = 0; i < txt.length; i++) {
+    const ch = txt[i];
+    if (ch === '{') {
+      if (depth === 0) startIdx = i;
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0 && startIdx !== -1) {
+        try {
+          objects.push(JSON.parse(txt.slice(startIdx, i + 1)));
+        } catch (e) { /* skip malformed fragment */ }
+        startIdx = -1;
+      }
+    }
+  }
+  return objects.length ? objects : null;
 }
 
 // Given the date a bill was last paid, project the next monthly occurrence.
