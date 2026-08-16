@@ -4062,6 +4062,7 @@ function editBill(id){
 var STATEMENT_IMPORT_MOCK = false;  // set true to test against hardcoded bills without the endpoint
 var _importDetected = [];
 var _importInFlight = false;
+var _importPeriod = '';  // "YYYY-MM" from the import response
 
 function _escImport(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(ch){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];}); }
 
@@ -4144,6 +4145,9 @@ function processStatementFile(file){
 }
 
 function _handleImportResponse(res){
+  // Capture the statement period for snapshots (default to current month).
+  if(res && res.period){ _importPeriod = res.period; }
+  else { var _now=new Date(); _importPeriod = _now.getFullYear()+'-'+('0'+(_now.getMonth()+1)).slice(-2); }
   // Hard failure: the endpoint returned success:false with a user-friendly error.
   if(res && res.success === false){
     document.getElementById('importLoading').style.display='none';
@@ -4234,35 +4238,109 @@ function addImportedBills(){
     var renewIn = document.querySelector('#importList .imp-renew-input[data-i="'+i+'"]');
     var renewMonth = renewIn && renewIn.value ? renewIn.value : '';  // "YYYY-MM" or ""
     chosen.push({ prov:b.prov, cat:cat, amt:parseFloat(b.amt)||0, freq:b.freq||'Monthly',
-      due: b.due || '', renewMonth: renewMonth });
+      due: b.due || '', renewMonth: renewMonth, source: b.source||'' });
   });
   if(!chosen.length){ toast('Tick at least one bill to add','error'); return; }
   var token = sbToken || load('sb_token', null);
+  var addedCount = 0, updatedCount = 0;
+
   chosen.forEach(function(cb){
     // Renewal month (if given) becomes the due date for renewal-type bills, since
     // that's what the 28-day reminder keys off. Otherwise use the projected
     // payment date from the statement. Month -> 1st of that month.
     var dueDate = cb.due || '';
     if(cb.renewMonth){ dueDate = cb.renewMonth + '-01'; }
-    var bill = { id: nextBillId++, sb_id: undefined, prov: cb.prov, cat: cb.cat, amt: cb.amt,
-      freq: cb.freq, due: dueDate, status: 'upcoming', url:'', ref:'', dd:'yes', notes:'Imported from statement' };
-    bills.push(bill);
-    if(token && !isGuest){
-      var payload = { prov:bill.prov, cat:bill.cat, amt:bill.amt, freq:bill.freq, due:bill.due||null,
-        status:bill.status, url:null, ref:null, dd:bill.dd, notes:bill.notes };
-      fetch('/api/supabase/data?table=bills', { method:'POST',
-        headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
-        body: JSON.stringify(payload) })
-        .then(function(r){ return r.json(); })
-        .then(function(res){ if(res && res.data && res.data.id){ bill.sb_id = res.data.id; save('bills',bills); } })
-        .catch(function(e){ console.error('[Import] save bill:', e); });
+
+    // De-dup: match an existing bill by provider (case-insensitive), same category.
+    // Provider is the natural key for "same bill"; category guards against a rare
+    // genuine second bill from one provider.
+    var pKey = (cb.prov||'').trim().toLowerCase();
+    var existing = null;
+    for(var bi=0; bi<bills.length; bi++){
+      if((bills[bi].prov||'').trim().toLowerCase()===pKey && bills[bi].cat===cb.cat){ existing = bills[bi]; break; }
+    }
+
+    if(existing){
+      // UPDATE the existing bill in place (amount + due), keep everything else.
+      existing.amt = cb.amt;
+      if(dueDate) existing.due = dueDate;
+      updatedCount++;
+      if(token && !isGuest && existing.sb_id){
+        var upd = { prov:existing.prov, cat:existing.cat, amt:existing.amt, freq:existing.freq,
+          due:existing.due||null, status:existing.status, url:existing.url||null, ref:existing.ref||null,
+          dd:existing.dd||'yes', notes:existing.notes||null };
+        fetch('/api/supabase/data?table=bills&id='+existing.sb_id, { method:'PUT',
+          headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
+          body: JSON.stringify(upd) })
+          .then(function(r){ return r.json(); })
+          .catch(function(e){ console.error('[Import] update bill:', e); });
+      }
+    } else {
+      // INSERT a new bill (previous behaviour).
+      var bill = { id: nextBillId++, sb_id: undefined, prov: cb.prov, cat: cb.cat, amt: cb.amt,
+        freq: cb.freq, due: dueDate, status: 'upcoming', url:'', ref:'', dd:'yes', notes:'Imported from statement' };
+      bills.push(bill);
+      addedCount++;
+      if(token && !isGuest){
+        var payload = { prov:bill.prov, cat:bill.cat, amt:bill.amt, freq:bill.freq, due:bill.due||null,
+          status:bill.status, url:null, ref:null, dd:bill.dd, notes:bill.notes };
+        fetch('/api/supabase/data?table=bills', { method:'POST',
+          headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
+          body: JSON.stringify(payload) })
+          .then(function(r){ return r.json(); })
+          .then(function(res){ if(res && res.data && res.data.id){ bill.sb_id = res.data.id; save('bills',bills); } })
+          .catch(function(e){ console.error('[Import] save bill:', e); });
+      }
     }
   });
+
   save('bills', bills);
+
+  // Write monthly snapshots (additive history for insights). Never blocks the
+  // bill save; failures are logged, not surfaced. Match period+prov -> PUT vs POST.
+  if(token && !isGuest && _importPeriod){
+    _writeBillSnapshots(chosen, _importPeriod, token);
+  }
+
   if(typeof awardXP==='function') awardXP(10, 'bill');
   closeImport();
-  toast(chosen.length+' bill'+(chosen.length>1?'s':'')+' added','success');
+  var parts = [];
+  if(addedCount) parts.push(addedCount+' added');
+  if(updatedCount) parts.push(updatedCount+' updated');
+  toast('Bills '+(parts.join(', ')||'saved'), 'success');
   nav('bills', null);
+}
+
+// Write one snapshot row per confirmed bill for the given period. Re-importing the
+// same month UPDATEs (matched on period+prov) rather than duplicating, mirroring
+// the unique(user_id, period, prov) constraint. Fails quietly.
+function _writeBillSnapshots(chosen, period, token){
+  fetch('/api/supabase/data?table=bill_snapshots', {
+    headers:{ 'Authorization':'Bearer '+token } })
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      var existing = (res && res.data) ? res.data : [];
+      chosen.forEach(function(cb){
+        var pKey = (cb.prov||'').trim().toLowerCase();
+        var match = null;
+        for(var i=0;i<existing.length;i++){
+          if(existing[i].period===period && (existing[i].prov||'').trim().toLowerCase()===pKey){ match = existing[i]; break; }
+        }
+        var body = { period:period, prov:cb.prov, cat:cb.cat, amt:cb.amt, source:cb.source||null };
+        if(match && match.id){
+          fetch('/api/supabase/data?table=bill_snapshots&id='+match.id, { method:'PUT',
+            headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
+            body: JSON.stringify(body) })
+            .catch(function(e){ console.error('[Snapshot] update:', e); });
+        } else {
+          fetch('/api/supabase/data?table=bill_snapshots', { method:'POST',
+            headers:{ 'Content-Type':'application/json','Authorization':'Bearer '+token },
+            body: JSON.stringify(body) })
+            .catch(function(e){ console.error('[Snapshot] insert:', e); });
+        }
+      });
+    })
+    .catch(function(e){ console.error('[Snapshot] fetch existing failed:', e); });
 }
 
 function saveBill(){
