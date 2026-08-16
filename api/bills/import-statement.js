@@ -29,26 +29,30 @@ const CATEGORIES = [
 ];
 
 const EXTRACTION_PROMPT =
-  'You are reading a UK bank statement. Identify RECURRING HOUSEHOLD BILLS only — '
-  + 'regular payments to utility, telecoms, insurance, council, streaming, or '
-  + 'mortgage/rent providers. \n\n'
+  'You are reading a UK bank statement. First determine the STATEMENT PERIOD, then '
+  + 'identify RECURRING HOUSEHOLD BILLS only — regular payments to utility, telecoms, '
+  + 'insurance, council, streaming, or mortgage/rent providers. \n\n'
   + 'INCLUDE: energy (gas/electric), water, broadband/phone, TV/streaming, council tax, '
   + 'home/car insurance, mortgage or rent.\n'
   + 'EXCLUDE: one-off purchases, shopping, groceries, restaurants, cash withdrawals, '
   + 'transfers to people, salary/income, and anything that is not a recurring household bill.\n\n'
-  + 'For each bill return an object with exactly these fields:\n'
+  + 'Return a JSON OBJECT with exactly two fields:\n\n'
+  + '"period" — the month this statement mainly covers, as "YYYY-MM". Use the statement '
+  + 'date range printed on the document. If it spans two months, use the month that most '
+  + 'of the transactions fall in. If you genuinely cannot tell, use null.\n\n'
+  + '"bills" — a JSON array of bill objects, each with exactly these fields:\n'
   + '  prov   — the provider name, cleaned up (e.g. "BRITISH GAS DD" → "British Gas")\n'
   + '  cat    — MUST be exactly one of: ' + CATEGORIES.join(', ') + '\n'
   + '  amt    — the monthly amount as a number in GBP (no currency symbol)\n'
   + '  freq   — "Monthly" (use this unless clearly otherwise)\n'
-  + '  lastPaid — the date this bill was most recently paid, as it appears on the '
-  + 'statement, in YYYY-MM-DD format. If you cannot determine a date, use null.\n'
+  + '  lastPaid — the date this bill was most recently paid, in YYYY-MM-DD format, '
+  + 'or null if you cannot determine it.\n'
   + '  source — the raw transaction description exactly as it appears on the statement\n\n'
   + 'If the same provider appears multiple times, return it ONCE using the most recent amount. '
   + 'If you are unsure whether something is a household bill, leave it out. '
   + 'It is better to miss a bill than to invent one.\n\n'
-  + 'Return ONLY a JSON array of these objects. No markdown, no commentary, no code fences. '
-  + 'If you find no recurring bills, return an empty array [].';
+  + 'Return ONLY the JSON object. No markdown, no commentary, no code fences. '
+  + 'If you find no recurring bills, return {"period": <period or null>, "bills": []}.';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
@@ -140,28 +144,40 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ success: false, error: 'The statement could not be read. Please try again.' });
     }
 
-    let bills;
+    let parsed;
     try {
-      bills = JSON.parse(txt);
+      parsed = JSON.parse(txt);
     } catch (e) {
-      // The model sometimes wraps the array in a sentence ("Here are the bills:...").
-      // Pull out the first [...] block and try again before giving up.
-      const start = txt.indexOf('[');
-      const end = txt.lastIndexOf(']');
-      if (start !== -1 && end !== -1 && end > start) {
-        try {
-          bills = JSON.parse(txt.slice(start, end + 1));
-        } catch (e2) {
-          bills = salvageObjects(txt);
-        }
-      } else {
-        // No closing bracket — response was likely truncated. Salvage whole objects.
-        bills = salvageObjects(txt);
+      // The model sometimes wraps the JSON in a sentence, or the response is
+      // truncated. Try to recover — first an object, then a bare array.
+      const objStart = txt.indexOf('{');
+      const objEnd = txt.lastIndexOf('}');
+      const arrStart = txt.indexOf('[');
+      const arrEnd = txt.lastIndexOf(']');
+      if (objStart !== -1 && objEnd > objStart) {
+        try { parsed = JSON.parse(txt.slice(objStart, objEnd + 1)); } catch (e2) { parsed = null; }
       }
-      if (!bills) {
+      if (!parsed && arrStart !== -1 && arrEnd > arrStart) {
+        try { parsed = JSON.parse(txt.slice(arrStart, arrEnd + 1)); } catch (e3) { parsed = null; }
+      }
+      if (!parsed) {
+        const salvaged = salvageObjects(txt);
+        if (salvaged) parsed = { period: null, bills: salvaged };
+      }
+      if (!parsed) {
         console.error('[Statement] Parse fail, unrecoverable. Raw:', txt.slice(0, 400));
         return res.status(502).json({ success: false, error: 'Could not read the bills from that statement. Please try again.' });
       }
+    }
+
+    // Accept either the new {period, bills} object or a bare array (older shape).
+    let period = null;
+    let bills;
+    if (Array.isArray(parsed)) {
+      bills = parsed;
+    } else {
+      period = normalisePeriod(parsed.period);
+      bills = Array.isArray(parsed.bills) ? parsed.bills : [];
     }
 
     if (!Array.isArray(bills)) bills = [];
@@ -181,7 +197,7 @@ module.exports = async function handler(req, res) {
       })
       .filter(function (b) { return b.prov && b.amt !== null; });
 
-    return res.status(200).json({ success: true, bills: clean });
+    return res.status(200).json({ success: true, period: period, bills: clean });
 
   } catch (err) {
     console.error('[Statement] Error:', err.message);
@@ -192,6 +208,18 @@ module.exports = async function handler(req, res) {
 function safeStr(v, max) {
   if (v == null) return '';
   return String(v).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, max);
+}
+
+// Normalise a period to "YYYY-MM". Accepts "2026-08", "2026-08-15", etc.
+// Falls back to the current month if the model couldn't determine one, so a
+// snapshot always has a period to file under.
+function normalisePeriod(p) {
+  if (p && typeof p === 'string') {
+    const m = p.match(/^(\d{4})-(\d{2})/);
+    if (m) return m[1] + '-' + m[2];
+  }
+  const now = new Date();
+  return now.getUTCFullYear() + '-' + String(now.getUTCMonth() + 1).padStart(2, '0');
 }
 
 // If the JSON array was truncated mid-response, salvage every COMPLETE {...}
